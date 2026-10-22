@@ -21,18 +21,24 @@ st.title("🤖 Совет ИИ")
 
 # --- ФУНКЦИИ ---
 def load_key():
-    # 1. Пытаемся взять ключ из "Секретов" Streamlit Cloud (для интернета)
+    # Сначала пробуем взять ключ из секретов Streamlit Cloud
     try:
         return st.secrets["API_KEY"]
     except Exception:
         pass
-    
-    # 2. Если не вышло (мы на локальном компьютере), берем из файла key.txt
+    # Если не вышло — берём из локального файла
     try:
         with open(KEY_FILE, "r", encoding="utf-8") as f:
             return f.read().strip()
     except FileNotFoundError:
         return None
+
+def load_history():
+    if os.path.exists(HISTORY_FILE):
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
 def save_to_history(entry):
     history = load_history()
     history.append(entry)
@@ -42,13 +48,6 @@ def save_to_history(entry):
 def clear_history():
     if os.path.exists(HISTORY_FILE):
         os.remove(HISTORY_FILE)
-
-def load_key():
-    try:
-        with open(KEY_FILE, "r", encoding="utf-8") as f:
-            return f.read().strip()
-    except FileNotFoundError:
-        return None
 
 def extract_text(file):
     filename = file.name.lower()
@@ -72,12 +71,12 @@ def extract_text(file):
 def ask(model, prompt):
     key = load_key()
     if not key:
-        raise Exception("Не найден файл key.txt")
+        raise Exception("Не найден файл key.txt или секрет API_KEY")
     client = OpenAI(api_key=key, base_url=BASE_URL)
     answer = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,  # Меньше креативности, больше точности!
+        temperature=0.3,
     )
     return answer.choices[0].message.content
 
@@ -93,7 +92,7 @@ if history:
     st.sidebar.markdown("---")
     for i, entry in enumerate(reversed(history)):
         short_task = entry["task"][:40] + "..." if len(entry["task"]) > 40 else entry["task"]
-        with st.sidebar.expander(f"📝 {short_task}\n {entry['date']}"):
+        with st.sidebar.expander(f" {short_task}\n🕒 {entry['date']}"):
             st.write("**Задача:**")
             st.write(entry["task"])
             if entry.get("file"):
@@ -112,7 +111,7 @@ else:
 # --- ОСНОВНОЙ ИНТЕРФЕЙС ---
 st.write("Научный совет: ChatGPT, Claude и Qwen работают с твоими источниками.")
 
-if st.button("🔌 Проверить связь"):
+if st.button(" Проверить связь"):
     for name, model in [("ChatGPT", MODEL_CHATGPT), ("Claude", MODEL_CLAUDE), ("Qwen", MODEL_QWEN)]:
         try:
             ask(model, "ОК")
@@ -121,7 +120,7 @@ if st.button("🔌 Проверить связь"):
             st.error(f"{name} — ошибка: {e}")
 
 st.markdown("---")
-st.subheader(" Загрузи научные материалы")
+st.subheader("📎 Загрузи научные материалы")
 st.info("💡 Модели будут СТРОГО следовать загруженному тексту и не станут выдумывать.")
 
 uploaded_file = st.file_uploader("Выбери PDF, DOCX или TXT:", type=['pdf', 'docx', 'txt'])
@@ -136,9 +135,8 @@ if uploaded_file is not None:
             file_text = file_text[:MAX_FILE_SIZE]
             st.warning(f"⚠️ Файл большой. Взяты только первые {MAX_FILE_SIZE} символов.")
         
-        # Показываем превью текста
         st.success(f"✅ Файл загружен: {file_name} ({len(file_text)} символов)")
-        with st.expander("👁 Посмотреть загруженный текст"):
+        with st.expander(" Посмотреть загруженный текст"):
             st.text(file_text[:2000] + "..." if len(file_text) > 2000 else file_text)
             
     except Exception as e:
@@ -153,7 +151,6 @@ if st.button("🚀 Запустить обсуждение"):
         st.warning("Сначала введи задачу.")
     else:
         try:
-            # === ФОРМИРУЕМ СТРОГИЙ ПРОМПТ С КОНТЕКСТОМ ===
             if file_text:
                 context_block = f"""
 # 📖 ИСТОЧНИК (научный материал)
@@ -170,10 +167,9 @@ if st.button("🚀 Запустить обсуждение"):
 
 """
             else:
-                context_block = "\n# ️ ВНИМАНИЕ: Источник не загружен. Отвечай на основе общих знаний.\n\n"
+                context_block = "\n# ⚠️ ВНИМАНИЕ: Источник не загружен. Отвечай на основе общих знаний.\n\n"
 
-            # === CHATGPT: ЧЕРНОВИК ===
-            with st.spinner("📝 ChatGPT анализирует источник..."):
+            with st.spinner(" ChatGPT анализирует источник..."):
                 draft = ask(
                     MODEL_CHATGPT, 
                     f"""Ты — научный ассистент. Твоя задача: подготовить ЧЕРНОВИК на основе источника.
@@ -190,10 +186,9 @@ if st.button("🚀 Запустить обсуждение"):
 
 Начни с анализа источника, затем предложи структуру ответа."""
                 )
-            st.subheader("1️ Черновик от ChatGPT")
+            st.subheader("1️⃣ Черновик от ChatGPT")
             st.write(draft)
 
-            # === CLAUDE: КРИТИКА И ПРОВЕРКА ===
             with st.spinner("🔍 Claude проверяет точность..."):
                 critique = ask(
                     MODEL_CLAUDE,
@@ -211,14 +206,13 @@ if st.button("🚀 Запустить обсуждение"):
 2. ✅ Нет ли выдуманных фактов или искажений?
 3. ✅ Корректно ли процитирован источник?
 4. ⚠️ Какие утверждения требуют уточнения или доказательства?
-5.  Что упущено из источника, но важно для задачи?
+5. ❌ Что упущено из источника, но важно для задачи?
 
 Будь МАКСИМАЛЬНО строгим. Если черновик противоречит источнику — укажи это явно."""
                 )
             st.subheader("2️⃣ Критика и проверка от Claude")
             st.write(critique)
 
-            # === QWEN: ФИНАЛЬНЫЙ СИНТЕЗ ===
             with st.spinner("🎯 Qwen готовит финальную версию..."):
                 final = ask(
                     MODEL_QWEN,
@@ -248,7 +242,6 @@ if st.button("🚀 Запустить обсуждение"):
             st.success("Научный совет завершил работу!")
             st.write(final)
 
-            # === СОХРАНЕНИЕ ===
             entry = {
                 "date": datetime.now().strftime("%d.%m.%Y %H:%M"),
                 "task": task,
@@ -261,4 +254,4 @@ if st.button("🚀 Запустить обсуждение"):
             st.sidebar.success("💾 Сохранено в историю!")
 
         except Exception as e:
-            st.error("❌ Что-то пошло не так: " + str(e))
+            st.error(" Что-то пошло не так: " + str(e))
