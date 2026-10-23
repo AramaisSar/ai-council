@@ -27,7 +27,7 @@ MODEL_QWEN    = "qwen/qwen-plus"
 MAX_FILE_SIZE = 50000 
 MAX_ARTICLES = 5
 MAX_BOOK_PAGES = 30
-MAX_EXCEL_ROWS = 100  # Максимум строк из Excel для анализа
+MAX_EXCEL_ROWS = 100
 # =============================================
 
 # --- КАСТОМНЫЙ CSS ---
@@ -74,7 +74,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.set_page_config(page_title="Совет ИИ", page_icon="", layout="wide")
+st.set_page_config(page_title="Совет ИИ", page_icon="🤖", layout="wide")
 
 st.markdown("""
 <div style="text-align: center; margin-bottom: 40px; margin-top: 20px;">
@@ -84,218 +84,6 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
-
-# --- ФУНКЦИИ ДЛЯ EXCEL ---
-def extract_excel_data(file, max_rows=MAX_EXCEL_ROWS):
-    """Извлекает данные из Excel файла"""
-    try:
-        # Читаем все листы
-        excel_file = pd.ExcelFile(file)
-        all_sheets_data = {}
-        
-        for sheet_name in excel_file.sheet_names:
-            df = pd.read_excel(excel_file, sheet_name=sheet_name, nrows=max_rows)
-            
-            # Преобразуем DataFrame в читаемый текст
-            sheet_text = f"=== ЛИСТ: {sheet_name} ===\n\n"
-            
-            # Информация о структуре
-            sheet_text += f"Всего строк: {len(df)}\n"
-            sheet_text += f"Всего столбцов: {len(df.columns)}\n"
-            sheet_text += f"Столбцы: {', '.join(df.columns.tolist())}\n\n"
-            
-            # Первые 5 строк как превью
-            sheet_text += "ПРЕВЬЮ ДАННЫХ (первые 5 строк):\n"
-            sheet_text += df.head().to_string(index=False) + "\n\n"
-            
-            # Статистика по числовым столбцам
-            numeric_cols = df.select_dtypes(include=['number']).columns
-            if len(numeric_cols) > 0:
-                sheet_text += "СТАТИСТИКА ПО ЧИСЛОВЫМ ДАННЫМ:\n"
-                for col in numeric_cols:
-                    sheet_text += f"\n{col}:\n"
-                    sheet_text += f"  Мин: {df[col].min():.2f}\n"
-                    sheet_text += f"  Макс: {df[col].max():.2f}\n"
-                    sheet_text += f"  Среднее: {df[col].mean():.2f}\n"
-                    sheet_text += f"  Сумма: {df[col].sum():.2f}\n"
-            
-            # Последние 5 строк (для трендов)
-            if len(df) > 10:
-                sheet_text += "\nПОСЛЕДНИЕ 5 СТРОК (для анализа трендов):\n"
-                sheet_text += df.tail().to_string(index=False) + "\n"
-            
-            all_sheets_data[sheet_name] = sheet_text
-        
-        # Объединяем все листы
-        combined_text = "\n\n".join(all_sheets_data.values())
-        
-        # Ограничиваем размер
-        if len(combined_text) > MAX_FILE_SIZE:
-            combined_text = combined_text[:MAX_FILE_SIZE]
-        
-        return combined_text, len(excel_file.sheet_names)
-    
-    except Exception as e:
-        return f"Ошибка чтения Excel: {str(e)}", 0
-
-def analyze_excel_structure(file):
-    """Анализирует структуру Excel файла для понимания типа данных"""
-    try:
-        df = pd.read_excel(file, nrows=10)
-        
-        analysis = {
-            'has_financial_data': False,
-            'has_dates': False,
-            'has_text': False,
-            'numeric_columns': [],
-            'date_columns': [],
-            'text_columns': []
-        }
-        
-        for col in df.columns:
-            if pd.api.types.is_numeric_dtype(df[col]):
-                analysis['numeric_columns'].append(col)
-                # Проверяем, похоже ли на финансовые данные
-                if any(keyword in col.lower() for keyword in ['выруч', 'прибыл', 'доход', 'расход', 'затрат', 'инвестиц', 'revenue', 'profit', 'income', 'expense', 'cost', 'invest']):
-                    analysis['has_financial_data'] = True
-            elif pd.api.types.is_datetime64_any_dtype(df[col]):
-                analysis['date_columns'].append(col)
-                analysis['has_dates'] = True
-            else:
-                analysis['text_columns'].append(col)
-                analysis['has_text'] = True
-        
-        return analysis
-    except:
-        return {'has_financial_data': False, 'has_dates': False, 'has_text': False}
-
-# --- ФУНКЦИИ ДЛЯ БИБЛИОТЕКИ ---
-def scan_library_folder(folder_path):
-    """Сканирует папку и создаёт индекс книг"""
-    books = []
-    folder = Path(folder_path)
-    
-    if not folder.exists():
-        return {'error': f'Папка не найдена: {folder_path}'}
-    
-    for file_path in folder.iterdir():
-        if file_path.is_file() and file_path.suffix.lower() in ['.pdf', '.docx', '.txt']:
-            try:
-                metadata = extract_book_metadata(file_path)
-                books.append({
-                    'path': str(file_path),
-                    'filename': file_path.name,
-                    'title': metadata.get('title', file_path.stem),
-                    'author': metadata.get('author', 'Автор неизвестен'),
-                    'year': metadata.get('year', 'Год неизвестен'),
-                    'size_pages': metadata.get('pages', 0),
-                    'extension': file_path.suffix.lower()
-                })
-            except Exception as e:
-                books.append({
-                    'path': str(file_path),
-                    'filename': file_path.name,
-                    'title': file_path.stem,
-                    'author': 'Автор неизвестен',
-                    'year': 'Год неизвестен',
-                    'size_pages': 0,
-                    'extension': file_path.suffix.lower(),
-                    'error': str(e)
-                })
-    
-    return books
-
-def extract_book_metadata(file_path):
-    """Извлекает метаданные из файла"""
-    metadata = {}
-    
-    if file_path.suffix.lower() == '.pdf':
-        try:
-            with open(file_path, 'rb') as f:
-                pdf_reader = PyPDF2.PdfReader(f)
-                info = pdf_reader.metadata
-                if info:
-                    metadata['title'] = info.get('/Title', '')
-                    metadata['author'] = info.get('/Author', '')
-                    metadata['year'] = info.get('/CreationDate', '')[:4] if info.get('/CreationDate') else ''
-                metadata['pages'] = len(pdf_reader.pages)
-        except:
-            metadata['pages'] = 0
-    
-    elif file_path.suffix.lower() == '.docx':
-        try:
-            doc = docx.Document(file_path)
-            metadata['pages'] = len(doc.paragraphs) // 50
-        except:
-            metadata['pages'] = 0
-    
-    return metadata
-
-def search_relevant_books(query, books, top_n=3):
-    """Находит релевантные книги по запросу"""
-    if not books:
-        return []
-    
-    query_words = set(query.lower().split())
-    scored_books = []
-    
-    for book in books:
-        score = 0
-        title_words = set(book['title'].lower().split())
-        score += len(query_words & title_words) * 3
-        
-        author_words = set(book['author'].lower().split())
-        score += len(query_words & author_words) * 2
-        
-        filename_words = set(book['filename'].lower().split())
-        score += len(query_words & filename_words)
-        
-        if score > 0:
-            scored_books.append((score, book))
-    
-    scored_books.sort(reverse=True, key=lambda x: x[0])
-    return [book for score, book in scored_books[:top_n]]
-
-def load_book_content(file_path, max_pages=MAX_BOOK_PAGES):
-    """Загружает текст из книги"""
-    file_path = Path(file_path)
-    
-    if not file_path.exists():
-        return f"Файл не найден: {file_path}"
-    
-    try:
-        if file_path.suffix.lower() == '.pdf':
-            with open(file_path, 'rb') as f:
-                pdf_reader = PyPDF2.PdfReader(f)
-                text = ""
-                for i, page in enumerate(pdf_reader.pages[:max_pages]):
-                    text += page.extract_text() + "\n"
-                return text
-        
-        elif file_path.suffix.lower() == '.docx':
-            doc = docx.Document(file_path)
-            paragraphs = [p.text for p in doc.paragraphs[:max_pages * 3]]
-            return "\n".join(paragraphs)
-        
-        elif file_path.suffix.lower() == '.txt':
-            with open(file_path, 'r', encoding='utf-8') as f:
-                lines = f.readlines()[:max_pages * 50]
-                return "".join(lines)
-        
-        return "Неподдерживаемый формат"
-    
-    except Exception as e:
-        return f"Ошибка чтения файла: {str(e)}"
-
-def save_library_index(books):
-    with open(LIBRARY_INDEX_FILE, 'w', encoding='utf-8') as f:
-        json.dump(books, f, ensure_ascii=False, indent=2)
-
-def load_library_index():
-    if os.path.exists(LIBRARY_INDEX_FILE):
-        with open(LIBRARY_INDEX_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return []
 
 # --- ФУНКЦИИ ДЛЯ НАУЧНОГО ПОИСКА ---
 def search_openalex(query, max_results=15):
@@ -361,6 +149,92 @@ def search_cyberleninka(query, max_results=15):
     except Exception as e:
         return [{'error': f'Ошибка поиска в КиберЛенинке: {str(e)}'}]
 
+def search_semantic_scholar(query, max_results=15):
+    """Поиск в Semantic Scholar (ИИ-поисковик по науке)"""
+    try:
+        url = f"https://api.semanticscholar.org/graph/v1/paper/search"
+        params = {
+            'query': query,
+            'limit': max_results,
+            'fields': 'title,abstract,authors,year,externalIds,citationCount'
+        }
+        response = requests.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+        
+        articles = []
+        for paper in data.get('data', []):
+            title = paper.get('title', 'Без названия')
+            abstract = paper.get('abstract', 'Аннотация недоступна')[:500]
+            authors_list = [author.get('name', '') for author in paper.get('authors', [])[:3]]
+            year = paper.get('year', 'Год неизвестен')
+            citations = paper.get('citationCount', 0)
+            
+            # Проверяем, есть ли PDF через DOI
+            external_ids = paper.get('externalIds', {})
+            doi = external_ids.get('DOI', '')
+            pdf_url = f"https://doi.org/{doi}" if doi else ''
+            
+            articles.append({
+                'title': title,
+                'abstract': abstract if abstract else 'Аннотация недоступна',
+                'authors': ', '.join(authors_list) if authors_list else 'Авторы неизвестны',
+                'year': year,
+                'pdf_url': pdf_url,
+                'source': 'Semantic Scholar',
+                'citations': citations,
+                'has_full_text': bool(doi)
+            })
+        
+        # Сортируем по цитированиям
+        articles.sort(key=lambda x: x.get('citations', 0), reverse=True)
+        return articles
+    except Exception as e:
+        return [{'error': f'Ошибка поиска в Semantic Scholar: {str(e)}'}]
+
+def search_core(query, max_results=15):
+    """Поиск в CORE (крупнейший агрегатор открытых научных работ)"""
+    try:
+        url = f"https://api.core.ac.uk/v3/search/works"
+        headers = {'Authorization': 'Bearer'}  # Базовый поиск без ключа
+        
+        params = {
+            'q': query,
+            'limit': max_results,
+            'offset': 0
+        }
+        
+        response = requests.get(url, params=params, headers=headers, timeout=15)
+        
+        if response.status_code == 401:
+            # Если нужен API ключ, возвращаем пустой список
+            return [{'error': 'CORE требует API ключ для полного доступа. Используй другие базы.'}]
+        
+        response.raise_for_status()
+        data = response.json()
+        
+        articles = []
+        for item in data.get('results', []):
+            title = item.get('title', 'Без названия')
+            abstract = item.get('abstract', 'Аннотация недоступна')[:500]
+            authors_list = item.get('authors', [])[:3]
+            year = item.get('yearPublished', 'Год неизвестен')
+            pdf_url = item.get('downloadUrl', '')
+            
+            articles.append({
+                'title': title,
+                'abstract': abstract if abstract else 'Аннотация недоступна',
+                'authors': ', '.join(authors_list) if authors_list else 'Авторы неизвестны',
+                'year': year,
+                'pdf_url': pdf_url,
+                'source': 'CORE',
+                'has_full_text': bool(pdf_url)
+            })
+        
+        return articles
+    except Exception as e:
+        return [{'error': f'Ошибка поиска в CORE: {str(e)}'}]
+
 def download_and_extract_pdf(pdf_url, max_chars=15000):
     try:
         response = requests.get(pdf_url, timeout=30)
@@ -379,6 +253,202 @@ def download_and_extract_pdf(pdf_url, max_chars=15000):
         return text
     except Exception as e:
         return f"Не удалось скачать или прочитать PDF: {str(e)}"
+
+# --- ФУНКЦИИ ДЛЯ EXCEL ---
+def extract_excel_data(file, max_rows=MAX_EXCEL_ROWS):
+    try:
+        excel_file = pd.ExcelFile(file)
+        all_sheets_data = {}
+        
+        for sheet_name in excel_file.sheet_names:
+            df = pd.read_excel(excel_file, sheet_name=sheet_name, nrows=max_rows)
+            
+            sheet_text = f"=== ЛИСТ: {sheet_name} ===\n\n"
+            sheet_text += f"Всего строк: {len(df)}\n"
+            sheet_text += f"Всего столбцов: {len(df.columns)}\n"
+            sheet_text += f"Столбцы: {', '.join(df.columns.tolist())}\n\n"
+            
+            sheet_text += "ПРЕВЬЮ ДАННЫХ (первые 5 строк):\n"
+            sheet_text += df.head().to_string(index=False) + "\n\n"
+            
+            numeric_cols = df.select_dtypes(include=['number']).columns
+            if len(numeric_cols) > 0:
+                sheet_text += "СТАТИСТИКА ПО ЧИСЛОВЫМ ДАННЫМ:\n"
+                for col in numeric_cols:
+                    sheet_text += f"\n{col}:\n"
+                    sheet_text += f"  Мин: {df[col].min():.2f}\n"
+                    sheet_text += f"  Макс: {df[col].max():.2f}\n"
+                    sheet_text += f"  Среднее: {df[col].mean():.2f}\n"
+                    sheet_text += f"  Сумма: {df[col].sum():.2f}\n"
+            
+            if len(df) > 10:
+                sheet_text += "\nПОСЛЕДНИЕ 5 СТРОК (для анализа трендов):\n"
+                sheet_text += df.tail().to_string(index=False) + "\n"
+            
+            all_sheets_data[sheet_name] = sheet_text
+        
+        combined_text = "\n\n".join(all_sheets_data.values())
+        
+        if len(combined_text) > MAX_FILE_SIZE:
+            combined_text = combined_text[:MAX_FILE_SIZE]
+        
+        return combined_text, len(excel_file.sheet_names)
+    
+    except Exception as e:
+        return f"Ошибка чтения Excel: {str(e)}", 0
+
+def analyze_excel_structure(file):
+    try:
+        df = pd.read_excel(file, nrows=10)
+        
+        analysis = {
+            'has_financial_data': False,
+            'has_dates': False,
+            'has_text': False,
+            'numeric_columns': [],
+            'date_columns': [],
+            'text_columns': []
+        }
+        
+        for col in df.columns:
+            if pd.api.types.is_numeric_dtype(df[col]):
+                analysis['numeric_columns'].append(col)
+                if any(keyword in col.lower() for keyword in ['выруч', 'прибыл', 'доход', 'расход', 'затрат', 'инвестиц', 'revenue', 'profit', 'income', 'expense', 'cost', 'invest']):
+                    analysis['has_financial_data'] = True
+            elif pd.api.types.is_datetime64_any_dtype(df[col]):
+                analysis['date_columns'].append(col)
+                analysis['has_dates'] = True
+            else:
+                analysis['text_columns'].append(col)
+                analysis['has_text'] = True
+        
+        return analysis
+    except:
+        return {'has_financial_data': False, 'has_dates': False, 'has_text': False}
+
+# --- ФУНКЦИИ ДЛЯ БИБЛИОТЕКИ ---
+def scan_library_folder(folder_path):
+    books = []
+    folder = Path(folder_path)
+    
+    if not folder.exists():
+        return {'error': f'Папка не найдена: {folder_path}'}
+    
+    for file_path in folder.iterdir():
+        if file_path.is_file() and file_path.suffix.lower() in ['.pdf', '.docx', '.txt']:
+            try:
+                metadata = extract_book_metadata(file_path)
+                books.append({
+                    'path': str(file_path),
+                    'filename': file_path.name,
+                    'title': metadata.get('title', file_path.stem),
+                    'author': metadata.get('author', 'Автор неизвестен'),
+                    'year': metadata.get('year', 'Год неизвестен'),
+                    'size_pages': metadata.get('pages', 0),
+                    'extension': file_path.suffix.lower()
+                })
+            except Exception as e:
+                books.append({
+                    'path': str(file_path),
+                    'filename': file_path.name,
+                    'title': file_path.stem,
+                    'author': 'Автор неизвестен',
+                    'year': 'Год неизвестен',
+                    'size_pages': 0,
+                    'extension': file_path.suffix.lower(),
+                    'error': str(e)
+                })
+    
+    return books
+
+def extract_book_metadata(file_path):
+    metadata = {}
+    
+    if file_path.suffix.lower() == '.pdf':
+        try:
+            with open(file_path, 'rb') as f:
+                pdf_reader = PyPDF2.PdfReader(f)
+                info = pdf_reader.metadata
+                if info:
+                    metadata['title'] = info.get('/Title', '')
+                    metadata['author'] = info.get('/Author', '')
+                    metadata['year'] = info.get('/CreationDate', '')[:4] if info.get('/CreationDate') else ''
+                metadata['pages'] = len(pdf_reader.pages)
+        except:
+            metadata['pages'] = 0
+    
+    elif file_path.suffix.lower() == '.docx':
+        try:
+            doc = docx.Document(file_path)
+            metadata['pages'] = len(doc.paragraphs) // 50
+        except:
+            metadata['pages'] = 0
+    
+    return metadata
+
+def search_relevant_books(query, books, top_n=3):
+    if not books:
+        return []
+    
+    query_words = set(query.lower().split())
+    scored_books = []
+    
+    for book in books:
+        score = 0
+        title_words = set(book['title'].lower().split())
+        score += len(query_words & title_words) * 3
+        
+        author_words = set(book['author'].lower().split())
+        score += len(query_words & author_words) * 2
+        
+        filename_words = set(book['filename'].lower().split())
+        score += len(query_words & filename_words)
+        
+        if score > 0:
+            scored_books.append((score, book))
+    
+    scored_books.sort(reverse=True, key=lambda x: x[0])
+    return [book for score, book in scored_books[:top_n]]
+
+def load_book_content(file_path, max_pages=MAX_BOOK_PAGES):
+    file_path = Path(file_path)
+    
+    if not file_path.exists():
+        return f"Файл не найден: {file_path}"
+    
+    try:
+        if file_path.suffix.lower() == '.pdf':
+            with open(file_path, 'rb') as f:
+                pdf_reader = PyPDF2.PdfReader(f)
+                text = ""
+                for i, page in enumerate(pdf_reader.pages[:max_pages]):
+                    text += page.extract_text() + "\n"
+                return text
+        
+        elif file_path.suffix.lower() == '.docx':
+            doc = docx.Document(file_path)
+            paragraphs = [p.text for p in doc.paragraphs[:max_pages * 3]]
+            return "\n".join(paragraphs)
+        
+        elif file_path.suffix.lower() == '.txt':
+            with open(file_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()[:max_pages * 50]
+                return "".join(lines)
+        
+        return "Неподдерживаемый формат"
+    
+    except Exception as e:
+        return f"Ошибка чтения файла: {str(e)}"
+
+def save_library_index(books):
+    with open(LIBRARY_INDEX_FILE, 'w', encoding='utf-8') as f:
+        json.dump(books, f, ensure_ascii=False, indent=2)
+
+def load_library_index():
+    if os.path.exists(LIBRARY_INDEX_FILE):
+        with open(LIBRARY_INDEX_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return []
 
 # --- ОСНОВНЫЕ ФУНКЦИИ ---
 def load_projects():
@@ -496,7 +566,7 @@ else:
 st.sidebar.markdown("---")
 
 if selected_project:
-    st.sidebar.header(f"📂 История: {selected_project['name']}")
+    st.sidebar.header(f" История: {selected_project['name']}")
     history = load_history()
     project_history = [h for h in history if h.get("project_id") == selected_project["id"]]
     if project_history:
@@ -510,7 +580,7 @@ if selected_project:
                 st.write("**Финальный результат:**"); st.success(entry["final"])
     else: st.sidebar.info("В этом проекте пока нет задач")
 else:
-    st.sidebar.header(" История задач"); st.sidebar.info("Выбери проект слева")
+    st.sidebar.header("📂 История задач"); st.sidebar.info("Выбери проект слева")
 
 st.sidebar.markdown("---")
 if load_key(): st.sidebar.success("🔑 Ключ активен")
@@ -533,7 +603,7 @@ with col2:
 st.markdown("---")
 
 # === МОЯ БИБЛИОТЕКА ===
-st.markdown("""<div class="ai-card card-library"><h3 style="margin: 0 0 10px 0; color: #9B59B6;">📚 Моя научная библиотека</h3><p style="margin: 0; color: #A89F91;">💡 Укажи путь к папке с учебниками и монографиями.</p></div>""", unsafe_allow_html=True)
+st.markdown("""<div class="ai-card card-library"><h3 style="margin: 0 0 10px 0; color: #9B59B6;"> Моя научная библиотека</h3><p style="margin: 0; color: #A89F91;">💡 Укажи путь к папке с учебниками и монографиями.</p></div>""", unsafe_allow_html=True)
 
 library_path = st.text_input("Путь к папке с библиотекой:", placeholder="Например: C:\\Users\\123\\Documents\\Научная_библиотека")
 
@@ -553,7 +623,7 @@ with col1:
             st.warning("Введи путь к папке")
 
 with col2:
-    use_library = st.checkbox("📖 Использовать мою библиотеку", value=False)
+    use_library = st.checkbox(" Использовать мою библиотеку", value=False)
 
 if 'library_books' in st.session_state and st.session_state['library_books']:
     books = st.session_state['library_books']
@@ -571,16 +641,19 @@ if 'library_books' in st.session_state and st.session_state['library_books']:
 
 st.markdown("---")
 
-# === НАУЧНЫЙ ПОИСК ===
-st.markdown("""<div class="ai-card card-search"><h3 style="margin: 0 0 10px 0; color: #5B8DB8;">🔬 Научный поиск в библиотеках</h3><p style="margin: 0; color: #A89F91;">💡 Найди научные статьи по теме.</p></div>""", unsafe_allow_html=True)
+# === РАСШИРЕННЫЙ НАУЧНЫЙ ПОИСК ===
+st.markdown("""<div class="ai-card card-search"><h3 style="margin: 0 0 10px 0; color: #5B8DB8;">🔬 Расширенный научный поиск</h3><p style="margin: 0; color: #A89F91;">💡 Поиск по российским и зарубежным научным базам данных.</p></div>""", unsafe_allow_html=True)
 
-search_query = st.text_input("Введи тему для поиска:", placeholder="Например: искусственный интеллект в гражданском праве")
+search_query = st.text_input("Введи тему для поиска:", placeholder="Например: artificial intelligence in civil law")
 
+st.markdown("**Выбери базы данных для поиска:**")
 col1, col2 = st.columns(2)
 with col1:
-    use_openalex = st.checkbox("OpenAlex (мировая база)", value=True)
+    use_cyberleninka = st.checkbox("🇷🇺 КиберЛенинка (Россия)", value=True)
+    use_openalex = st.checkbox("🌍 OpenAlex (Мировая база)", value=True)
 with col2:
-    use_cyberleninka = st.checkbox("КиберЛенинка (российская база)", value=True)
+    use_semantic_scholar = st.checkbox("🤖 Semantic Scholar (ИИ-поиск)", value=True)
+    use_core = st.checkbox("📚 CORE (Открытые работы)", value=False)
 
 deep_analysis = st.checkbox("🎓 Глубокое исследование (скачать полные тексты)", value=True)
 
@@ -590,14 +663,24 @@ if st.button("🔍 Найти статьи", use_container_width=True):
     else:
         all_articles = []
         
+        if use_cyberleninka:
+            with st.spinner("🔍 Ищу в КиберЛенинке..."):
+                articles = search_cyberleninka(search_query)
+                all_articles.extend(articles)
+        
         if use_openalex:
             with st.spinner("🔍 Ищу в OpenAlex..."):
                 articles = search_openalex(search_query)
                 all_articles.extend(articles)
         
-        if use_cyberleninka:
-            with st.spinner(" Ищу в КиберЛенинке..."):
-                articles = search_cyberleninka(search_query)
+        if use_semantic_scholar:
+            with st.spinner(" Ищу в Semantic Scholar..."):
+                articles = search_semantic_scholar(search_query)
+                all_articles.extend(articles)
+        
+        if use_core:
+            with st.spinner("📚 Ищу в CORE..."):
+                articles = search_core(search_query)
                 all_articles.extend(articles)
         
         full_text_articles = [a for a in all_articles if a.get('has_full_text', False)]
@@ -643,7 +726,7 @@ elif 'search_results' in st.session_state and st.session_state['search_results']
         <div class="article-item">
             <h4 style="margin: 0 0 8px 0; color: #5B8DB8;">{article['title']}</h4>
             <p style="margin: 0; color: #666; font-size: 0.9em;">
-                <b>Авторы:</b> {article['authors']} | <b>Год:</b> {article['year']}
+                <b>Авторы:</b> {article['authors']} | <b>Год:</b> {article['year']} | <b>Источник:</b> {article['source']}
             </p>
             <p style="margin: 0; color: #4A403A; font-size: 0.95em;">{article['abstract']}</p>
         </div>
@@ -654,17 +737,17 @@ elif 'search_results' in st.session_state and st.session_state['search_results']
     
     if selected_articles:
         if st.button("📥 Добавить выбранные статьи", use_container_width=True):
-            articles_text = "#  НАУЧНЫЕ СТАТЬИ\n\n"
+            articles_text = "# 📚 НАУЧНЫЕ СТАТЬИ\n\n"
             for i, article in enumerate(selected_articles, 1):
-                articles_text += f"## [{i}] {article['title']}\n**Авторы:** {article['authors']} | **Год:** {article['year']}\n\n{article['abstract']}\n\n---\n\n"
+                articles_text += f"## [{i}] {article['title']}\n**Авторы:** {article['authors']} | **Год:** {article['year']} | **Источник:** {article['source']}\n\n{article['abstract']}\n\n---\n\n"
             st.session_state['articles_context'] = articles_text
             st.success(f"✅ Добавлено {len(selected_articles)} статей!")
             st.rerun()
 
 st.markdown("---")
 
-# === ЗАГРУЗКА ФАЙЛОВ (ТЕПЕРЬ С EXCEL) ===
-st.markdown("""<div class="ai-card card-excel"><h3 style="margin: 0 0 10px 0; color: #27AE60;">📎 Загрузи материалы (PDF, DOCX, TXT, Excel, фото)</h3><p style="margin: 0; color: #A89F91;">💡 Поддерживаются все форматы документов и <b>Excel-файлы с финансовыми данными</b>.</p></div>""", unsafe_allow_html=True)
+# === ЗАГРУЗКА ФАЙЛОВ ===
+st.markdown("""<div class="ai-card card-excel"><h3 style="margin: 0 0 10px 0; color: #27AE60;">📎 Загрузи материалы (PDF, DOCX, TXT, Excel, фото)</h3><p style="margin: 0; color: #A89F91;"> Поддерживаются все форматы документов и Excel-файлы.</p></div>""", unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("Выбери файл:", type=['pdf', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'xlsx', 'xls'])
 file_text = ""; file_name = ""; file_type = ""
@@ -676,7 +759,7 @@ if uploaded_file is not None:
         filename_lower = file_name.lower()
         
         if filename_lower.endswith(('.jpg', '.jpeg', '.png')):
-            with st.spinner("️ Анализирую изображение..."):
+            with st.spinner("👁️ Анализирую изображение..."):
                 file_text = analyze_image(uploaded_file)
             st.success(f"✅ Изображение проанализировано: {file_name}")
             file_type = "image"
@@ -688,17 +771,15 @@ if uploaded_file is not None:
                 
                 st.success(f"✅ Excel-файл проанализирован: {file_name} ({num_sheets} листов)")
                 
-                # Показываем информацию о структуре
                 if excel_analysis:
                     st.info(f"📊 **Структура данных:**")
                     if excel_analysis['has_financial_data']:
-                        st.success("💰 Обнаружены финансовые данные (выручка, прибыль, расходы и т.д.)")
+                        st.success("💰 Обнаружены финансовые данные")
                     if excel_analysis['has_dates']:
-                        st.info("📅 Обнаружены даты (временные ряды)")
+                        st.info(" Обнаружены даты")
                     st.write(f"**Числовые столбцы:** {', '.join(excel_analysis['numeric_columns'])}")
-                    st.write(f"**Текстовые столбцы:** {', '.join(excel_analysis['text_columns'])}")
                 
-                with st.expander("️ Посмотреть извлечённые данные"):
+                with st.expander("👁️ Посмотреть извлечённые данные"):
                     st.text(file_text[:2000] + "..." if len(file_text) > 2000 else file_text)
             
             file_type = "excel"
@@ -722,7 +803,7 @@ external_ai_opinion = st.text_area(
 )
 
 st.markdown("---")
-task = st.text_area("Опиши задачу:", height=150, placeholder="Например: 'Проанализируй финансовые показатели компании и выяви тренды...'")
+task = st.text_area("Опиши задачу:", height=150, placeholder="Например: 'Напиши научную статью на основе найденных источников...'")
 
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
@@ -750,28 +831,24 @@ with col2:
                             context_parts.append(books_text)
                             st.success(f"✅ Найдено {len(relevant_books)} книг")
                 
-                # 2. Excel-файл (если есть)
+                # 2. Excel-файл
                 if file_type == "excel" and file_text:
                     excel_context = "# 📊 ДАННЫЕ ИЗ EXCEL-ФАЙЛА\n\n"
                     
                     if excel_analysis and excel_analysis['has_financial_data']:
-                        excel_context += "️ ВНИМАНИЕ: Этот файл содержит финансовые данные. При анализе:\n"
-                        excel_context += "- Выявляй тренды (рост/падение показателей)\n"
-                        excel_context += "- Рассчитывай ключевые метрики (рентабельность, маржинальность)\n"
-                        excel_context += "- Сравнивай периоды (год к году, квартал к кварталу)\n"
-                        excel_context += "- Находи аномалии и отклонения\n"
-                        excel_context += "- Делай выводы о финансовом состоянии\n\n"
+                        excel_context += "️ ВНИМАНИЕ: Этот файл содержит финансовые данные.\n"
+                        excel_context += "- Выявляй тренды\n- Рассчитывай метрики\n- Находи аномалии\n- Делай выводы\n\n"
                     
                     excel_context += file_text + "\n\n"
                     context_parts.append(excel_context)
                 
                 # 3. Статьи из глубокого анализа
                 if 'deep_analysis_articles' in st.session_state and st.session_state['deep_analysis_articles']:
-                    articles_text = "#  НАУЧНЫЕ СТАТЬИ (ПОЛНЫЕ ТЕКСТЫ)\n\n"
+                    articles_text = "# 📚 НАУЧНЫЕ СТАТЬИ (ПОЛНЫЕ ТЕКСТЫ)\n\n"
                     articles_text += "ИНСТРУКЦИЯ: Цитируй статьи как [1], [2] и т.д.\n\n"
                     
                     for i, article in enumerate(st.session_state['deep_analysis_articles'], 1):
-                        articles_text += f"## [{i}] {article['title']}\n**Авторы:** {article['authors']} | **Год:** {article['year']}\n\n{article.get('full_text', '')[:10000]}\n\n---\n\n"
+                        articles_text += f"## [{i}] {article['title']}\n**Авторы:** {article['authors']} | **Год:** {article['year']} | **Источник:** {article['source']}\n\n{article.get('full_text', '')[:10000]}\n\n---\n\n"
                     
                     context_parts.append(articles_text)
                 
@@ -779,13 +856,13 @@ with col2:
                 if 'articles_context' in st.session_state and st.session_state['articles_context']:
                     context_parts.append(st.session_state['articles_context'])
                 
-                # 5. Загруженный файл (не Excel)
+                # 5. Загруженный файл
                 if file_type in ['document', 'image'] and file_text:
                     context_parts.append(f"# 📄 ЗАГРУЖЕННЫЙ ФАЙЛ\n\n{file_text}\n\n")
                 
                 # 6. Мнение внешнего ИИ
                 if external_ai_opinion.strip():
-                    context_parts.append(f"# ️ МНЕНИЕ ВНЕШНЕГО ИИ\n\n{external_ai_opinion}\n\n")
+                    context_parts.append(f"# ⚖️ МНЕНИЕ ВНЕШНЕГО ИИ\n\n{external_ai_opinion}\n\n")
                 
                 full_context = "\n".join(context_parts) if context_parts else ""
                 
@@ -794,29 +871,28 @@ with col2:
 2. Используй ТОЛЬКО информацию из источников.
 3. НЕ выдумывай факты или цифры.
 4. ЦИТИРУЙ источники: книги как [К1], статьи как [1], данные из Excel как [Данные].
-5. Если есть финансовые данные — проводи полноценный анализ (тренды, метрики, выводы).
+5. Если есть финансовые данные — проводи полноценный анализ.
 6. В конце добавь 'СПИСОК ЛИТЕРАТУРЫ/ИСТОЧНИКОВ'.
 
 """
                 
                 full_context_with_instructions = full_context + instructions if full_context else instructions
 
-                # Определяем тип задачи
                 is_financial = excel_analysis and excel_analysis['has_financial_data'] if excel_analysis else False
                 
                 if is_financial:
-                    task_prefix = f"""Ты — финансовый аналитик и научный ассистент. Твоя задача: провести глубокий ФИНАНСОВЫЙ АНАЛИЗ и подготовить отчёт.
+                    task_prefix = f"""Ты — финансовый аналитик и научный ассистент. Проведи глубокий ФИНАНСОВЫЙ АНАЛИЗ.
 
-Анализируй данные из Excel-файла:
-- Выяви тренды (рост/падение)
-- Рассчитай ключевые метрики
+Анализируй данные из Excel:
+- Выяви тренды
+- Рассчитай метрики
 - Найди аномалии
-- Сделай выводы о состоянии
+- Сделай выводы
 - Дай рекомендации
 
 """
                 else:
-                    task_prefix = f"""Ты — научный ассистент. Твоя задача: подготовить ЧЕРНОВИК НАУЧНОЙ СТАТЬИ.
+                    task_prefix = f"""Ты — научный ассистент. Подготовь ЧЕРНОВИК НАУЧНОЙ СТАТЬИ.
 
 """
 
@@ -834,10 +910,10 @@ with col2:
 
 Цитируй источники.""")
                 
-                st.markdown(f"""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️ Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️⃣ Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
                 st.write(draft)
 
-                with st.spinner(" Claude проверяет..."):
+                with st.spinner("🔍 Claude проверяет..."):
                     critique = ask(MODEL_CLAUDE, f"""Ты — строгий рецензент. Проверь черновик.
 
 {full_context_with_instructions}
@@ -849,13 +925,13 @@ with col2:
 
 ## ПРОВЕРЬ:
 1. Все ли факты/цифры есть в источниках?
-2. Корректны ли расчёты (если есть)?
+2. Корректны ли расчёты?
 3. Есть ли список источников?
 4. Что упущено?
 
 Будь строгим.""")
                 
-                st.markdown(f"""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️⃣ Критика от Claude</h3></div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️ Критика от Claude</h3></div>""", unsafe_allow_html=True)
                 st.write(critique)
 
                 with st.spinner("🎯 Qwen готовит финал..."):
@@ -877,7 +953,7 @@ with col2:
 3. Структура: Введение, Анализ, Выводы, СПИСОК ИСТОЧНИКОВ
 4. Готовый профессиональный документ""")
                 
-                st.markdown(f"""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️⃣ ✅ Финал от Qwen</h3></div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️ ✅ Финал от Qwen</h3></div>""", unsafe_allow_html=True)
                 st.write(final)
 
                 # Word документ
@@ -898,7 +974,7 @@ with col2:
                 if 'deep_analysis_articles' in st.session_state:
                     doc.add_heading('Научные статьи:', level=2)
                     for i, article in enumerate(st.session_state['deep_analysis_articles'], 1):
-                        doc.add_paragraph(f"[{i}] {article['authors']}. {article['title']}. {article['year']}.")
+                        doc.add_paragraph(f"[{i}] {article['authors']}. {article['title']}. {article['year']}. {article.get('source', '')}.")
                 
                 doc.add_heading('1. Черновик от ChatGPT', level=2)
                 doc.add_paragraph(draft)
@@ -913,7 +989,7 @@ with col2:
                 
                 with open(tmp_path, "rb") as f:
                     st.download_button(
-                        label="📥 Скачать в Word",
+                        label=" Скачать в Word",
                         data=f,
                         file_name=f"Отчёт_{datetime.now().strftime('%d%m%Y_%H%M')}.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
