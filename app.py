@@ -18,8 +18,124 @@ MODEL_QWEN    = "qwen/qwen-plus"
 MAX_FILE_SIZE = 50000 
 # =============================================
 
+# --- КАСТОМНЫЙ CSS ДЛЯ КРАСИВОГО ДИЗАЙНА ---
+st.markdown("""
+<style>
+    /* Основной фон и шрифты */
+    .stApp {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    /* Заголовки */
+    h1 {
+        color: #ffffff !important;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        font-size: 3rem !important;
+        margin-bottom: 2rem !important;
+    }
+    
+    h2, h3 {
+        color: #ffffff !important;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+    
+    /* Боковая панель */
+    .css-1d391kg {
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(10px);
+    }
+    
+    /* Кнопки */
+    .stButton>button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 12px 24px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+    }
+    
+    .stButton>button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3) !important;
+    }
+    
+    /* Карточки для ответов ИИ */
+    .ai-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        padding: 20px;
+        margin: 15px 0;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+        animation: fadeIn 0.5s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Поле ввода задачи */
+    .stTextArea textarea {
+        border-radius: 10px !important;
+        border: 2px solid rgba(255,255,255,0.3) !important;
+        background: rgba(255,255,255,0.9) !important;
+        font-size: 16px !important;
+        padding: 15px !important;
+    }
+    
+    /* Статусы (успех, ошибка) */
+    .stSuccess {
+        background: rgba(76, 175, 80, 0.2) !important;
+        border-radius: 10px !important;
+        padding: 15px !important;
+    }
+    
+    .stError {
+        background: rgba(244, 67, 54, 0.2) !important;
+        border-radius: 10px !important;
+        padding: 15px !important;
+    }
+    
+    .stWarning {
+        background: rgba(255, 152, 0, 0.2) !important;
+        border-radius: 10px !important;
+        padding: 15px !important;
+    }
+    
+    .stInfo {
+        background: rgba(33, 150, 243, 0.2) !important;
+        border-radius: 10px !important;
+        padding: 15px !important;
+    }
+    
+    /* Разделители */
+    hr {
+        border: none !important;
+        height: 2px !important;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent) !important;
+        margin: 30px 0 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.set_page_config(page_title="Совет ИИ", page_icon="🤖", layout="wide")
-st.title("🤖 Совет ИИ")
+
+# Красивый заголовок с иконкой
+st.markdown("""
+<div style="text-align: center; margin-bottom: 30px;">
+    <h1 style="color: white; font-size: 3.5rem; margin: 0;">🤖 Совет ИИ</h1>
+    <p style="color: rgba(255,255,255,0.9); font-size: 1.2rem; margin-top: 10px;">
+        Три разума. Одна задача. Идеальный результат.
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
 # --- ФУНКЦИИ ДЛЯ РАБОТЫ С ПРОЕКТАМИ ---
 def load_projects():
@@ -48,7 +164,6 @@ def delete_project(project_id):
     projects = load_projects()
     projects = [p for p in projects if p["id"] != project_id]
     save_projects(projects)
-    # Также удаляем задачи этого проекта из истории
     history = load_history()
     history = [h for h in history if h.get("project_id") != project_id]
     save_history(history)
@@ -117,7 +232,6 @@ st.sidebar.header("📁 Проекты")
 
 projects = load_projects()
 
-# Кнопка создания нового проекта
 with st.sidebar.expander("➕ Новый проект"):
     new_project_name = st.text_input("Название проекта:", placeholder="Например: Научные статьи")
     new_project_desc = st.text_area("Описание (необязательно):", height=80)
@@ -129,13 +243,12 @@ with st.sidebar.expander("➕ Новый проект"):
         else:
             st.warning("Введите название проекта")
 
-# Выбор активного проекта
 if projects:
     project_names = [f"{p['name']} ({p['created']})" for p in projects]
     selected_name = st.sidebar.selectbox("Выбери проект:", project_names)
     selected_project = projects[project_names.index(selected_name)]
     
-    if st.sidebar.button("🗑 Удалить проект"):
+    if st.sidebar.button(" Удалить проект"):
         if st.sidebar.checkbox("Да, удалить проект и все его задачи"):
             delete_project(selected_project["id"])
             st.sidebar.success("Проект удалён")
@@ -156,7 +269,7 @@ if selected_project:
         st.sidebar.markdown("---")
         for i, entry in enumerate(reversed(project_history)):
             short_task = entry["task"][:40] + "..." if len(entry["task"]) > 40 else entry["task"]
-            with st.sidebar.expander(f"📝 {short_task}\n {entry['date']}"):
+            with st.sidebar.expander(f"📝 {short_task}\n🕒 {entry['date']}"):
                 st.write("**Задача:**")
                 st.write(entry["task"])
                 if entry.get("file"):
@@ -177,26 +290,41 @@ else:
 
 # --- ОСНОВНОЙ ИНТЕРФЕЙС ---
 if selected_project:
-    st.write(f"Проект: **{selected_project['name']}**")
-    if selected_project.get("description"):
-        st.caption(selected_project["description"])
+    st.markdown(f"""
+    <div class="ai-card">
+        <h3 style="margin: 0; color: #667eea;">📁 Проект: {selected_project['name']}</h3>
+        {f'<p style="margin: 10px 0 0 0; color: #666;">{selected_project["description"]}</p>' if selected_project.get("description") else ''}
+    </div>
+    """, unsafe_allow_html=True)
 else:
-    st.write("Создай или выбери проект в боковой панели слева")
+    st.markdown("""
+    <div class="ai-card" style="text-align: center;">
+        <h3 style="margin: 0; color: #667eea;">👈 Создай или выбери проект в боковой панели</h3>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("---")
-st.write("Научный совет: ChatGPT, Claude и Qwen работают с твоими источниками.")
 
-if st.button("🔌 Проверить связь"):
-    for name, model in [("ChatGPT", MODEL_CHATGPT), ("Claude", MODEL_CLAUDE), ("Qwen", MODEL_QWEN)]:
-        try:
-            ask(model, "ОК")
-            st.success(f"{name} — на связи")
-        except Exception as e:
-            st.error(f"{name} — ошибка: {e}")
+# Кнопка проверки связи в красивом блоке
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    if st.button("🔌 Проверить связь", use_container_width=True):
+        for name, model in [("ChatGPT", MODEL_CHATGPT), ("Claude", MODEL_CLAUDE), ("Qwen", MODEL_QWEN)]:
+            try:
+                ask(model, "ОК")
+                st.success(f"✅ {name} — на связи")
+            except Exception as e:
+                st.error(f"❌ {name} — ошибка: {e}")
 
 st.markdown("---")
-st.subheader("📎 Загрузи научные материалы")
-st.info("💡 Модели будут СТРОГО следовать загруженному тексту и не станут выдумывать.")
+
+# Загрузка файлов
+st.markdown("""
+<div class="ai-card">
+    <h3 style="margin: 0 0 15px 0; color: #667eea;">📎 Загрузи научные материалы</h3>
+    <p style="margin: 0; color: #666;">💡 Модели будут СТРОГО следовать загруженному тексту и не станут выдумывать.</p>
+</div>
+""", unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("Выбери PDF, DOCX или TXT:", type=['pdf', 'docx', 'txt'])
 
@@ -218,19 +346,24 @@ if uploaded_file is not None:
         st.error(f"❌ Ошибка чтения файла: {e}")
 
 st.markdown("---")
+
+# Поле задачи
 task = st.text_area("Опиши задачу:", height=150, 
                     placeholder="Например: 'На основе этого текста выдели ключевые тезисы для научной статьи'")
 
-if st.button("🚀 Запустить обсуждение"):
-    if not selected_project:
-        st.warning("Сначала создай или выбери проект в боковой панели.")
-    elif not task.strip():
-        st.warning("Сначала введи задачу.")
-    else:
-        try:
-            if file_text:
-                context_block = f"""
-#  ИСТОЧНИК (научный материал)
+# Кнопка запуска
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    if st.button("🚀 Запустить обсуждение", use_container_width=True):
+        if not selected_project:
+            st.warning("⚠️ Сначала создай или выбери проект в боковой панели.")
+        elif not task.strip():
+            st.warning("⚠️ Сначала введи задачу.")
+        else:
+            try:
+                if file_text:
+                    context_block = f"""
+# 📖 ИСТОЧНИК (научный материал)
 
 {file_text}
 
@@ -243,13 +376,14 @@ if st.button("🚀 Запустить обсуждение"):
 6. Если делаешь вывод — объясни, на чем он основан в тексте.
 
 """
-            else:
-                context_block = "\n# ⚠️ ВНИМАНИЕ: Источник не загружен. Отвечай на основе общих знаний.\n\n"
+                else:
+                    context_block = "\n# ️ ВНИМАНИЕ: Источник не загружен. Отвечай на основе общих знаний.\n\n"
 
-            with st.spinner("📝 ChatGPT анализирует источник..."):
-                draft = ask(
-                    MODEL_CHATGPT, 
-                    f"""Ты — научный ассистент. Твоя задача: подготовить ЧЕРНОВИК на основе источника.
+                # ChatGPT
+                with st.spinner("📝 ChatGPT анализирует источник..."):
+                    draft = ask(
+                        MODEL_CHATGPT, 
+                        f"""Ты — научный ассистент. Твоя задача: подготовить ЧЕРНОВИК на основе источника.
 
 {context_block}
 ## ЗАДАЧА:
@@ -262,14 +396,20 @@ if st.button("🚀 Запустить обсуждение"):
 - Выделять ключевые идеи и аргументы
 
 Начни с анализа источника, затем предложи структуру ответа."""
-                )
-            st.subheader("1️⃣ Черновик от ChatGPT")
-            st.write(draft)
+                    )
+                
+                st.markdown(f"""
+                <div class="ai-card">
+                    <h3 style="margin: 0 0 15px 0; color: #4CAF50;">1️⃣ Черновик от ChatGPT</h3>
+                </div>
+                """, unsafe_allow_html=True)
+                st.write(draft)
 
-            with st.spinner("🔍 Claude проверяет точность..."):
-                critique = ask(
-                    MODEL_CLAUDE,
-                    f"""Ты — строгий научный рецензент. Твоя задача: ПРОВЕРИТЬ черновик на соответствие источнику.
+                # Claude
+                with st.spinner("🔍 Claude проверяет точность..."):
+                    critique = ask(
+                        MODEL_CLAUDE,
+                        f"""Ты — строгий научный рецензент. Твоя задача: ПРОВЕРИТЬ черновик на соответствие источнику.
 
 {context_block}
 ## ЗАДАЧА, которую ставили:
@@ -286,14 +426,20 @@ if st.button("🚀 Запустить обсуждение"):
 5. ❌ Что упущено из источника, но важно для задачи?
 
 Будь МАКСИМАЛЬНО строгим. Если черновик противоречит источнику — укажи это явно."""
-                )
-            st.subheader("2️⃣ Критика и проверка от Claude")
-            st.write(critique)
+                    )
+                
+                st.markdown(f"""
+                <div class="ai-card">
+                    <h3 style="margin: 0 0 15px 0; color: #FF9800;">2️⃣ Критика и проверка от Claude</h3>
+                </div>
+                """, unsafe_allow_html=True)
+                st.write(critique)
 
-            with st.spinner("🎯 Qwen готовит финальную версию..."):
-                final = ask(
-                    MODEL_QWEN,
-                    f"""Ты — главный редактор научной работы. Твоя задача: создать ФИНАЛЬНУЮ ВЕРСИЮ, исправив все ошибки.
+                # Qwen
+                with st.spinner("🎯 Qwen готовит финальную версию..."):
+                    final = ask(
+                        MODEL_QWEN,
+                        f"""Ты — главный редактор научной работы. Твоя задача: создать ФИНАЛЬНУЮ ВЕРСИЮ, исправив все ошибки.
 
 {context_block}
 ## ЗАДАЧА:
@@ -314,22 +460,27 @@ if st.button("🚀 Запустить обсуждение"):
 6. ✅ Оформить ответ как готовый научный материал (заголовки, списки, абзацы)
 
 Создай финальную, ПРОВЕРЕННУЮ версию."""
-                )
-            st.subheader("3️⃣ ✅ Финальный результат от Qwen")
-            st.success("Научный совет завершил работу!")
-            st.write(final)
+                    )
+                
+                st.markdown(f"""
+                <div class="ai-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h3 style="margin: 0 0 15px 0; color: white;">3️⃣ ✅ Финальный результат от Qwen</h3>
+                    <p style="margin: 0; opacity: 0.9;">Научный совет завершил работу!</p>
+                </div>
+                """, unsafe_allow_html=True)
+                st.write(final)
 
-            entry = {
-                "project_id": selected_project["id"],
-                "date": datetime.now().strftime("%d.%m.%Y %H:%M"),
-                "task": task,
-                "file": file_name,
-                "draft": draft,
-                "critique": critique,
-                "final": final
-            }
-            save_to_history(entry)
-            st.sidebar.success("💾 Сохранено в историю проекта!")
+                entry = {
+                    "project_id": selected_project["id"],
+                    "date": datetime.now().strftime("%d.%m.%Y %H:%M"),
+                    "task": task,
+                    "file": file_name,
+                    "draft": draft,
+                    "critique": critique,
+                    "final": final
+                }
+                save_to_history(entry)
+                st.sidebar.success("💾 Сохранено в историю проекта!")
 
-        except Exception as e:
-            st.error("❌ Что-то пошло не так: " + str(e))
+            except Exception as e:
+                st.error(f"❌ Что-то пошло не так: {str(e)}")
