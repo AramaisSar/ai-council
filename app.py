@@ -1046,18 +1046,172 @@ elif branch == 'legal':
     ], index=0)
 
 elif branch == 'business':
-    st.markdown("""<div class="ai-card card-finance"><h3 style="margin: 0 0 10px 0; color: #E74C3C;">💼 Генератор финансовых моделей</h3>
-    <p style="margin: 0; color: #A89F91;">Создай модель с NPV, IRR, ROI за 1 минуту.</p></div>""", unsafe_allow_html=True)
+    elif branch == 'business':
+    # === АНАЛИЗ БАНКОВСКИХ ВЫПИСОК ===
+    st.markdown("""<div class="ai-card card-api"><h3 style="margin: 0 0 10px 0; color: #3498DB;"> Анализ банковских выписок</h3>
+    <p style="margin: 0; color: #A89F91;">Загрузи выписку (CSV, Excel) — ИИ найдёт причины убытков и аномалии.</p></div>""", unsafe_allow_html=True)
+    
+    bank_statement = st.file_uploader("Загрузи банковскую выписку:", type=['csv', 'xlsx', 'xls'])
+    
+    if bank_statement is not None:
+        try:
+            fn = bank_statement.name.lower()
+            if fn.endswith('.csv'):
+                df = pd.read_csv(bank_statement, encoding='utf-8', on_bad_lines='skip')
+            else:
+                df = pd.read_excel(bank_statement)
+            
+            st.success(f"✅ Выписка загружена: {len(df)} транзакций")
+            
+            # Автоматический анализ структуры
+            st.info(f"**Столбцы:** {', '.join(df.columns.tolist())}")
+            
+            # Пытаемся найти колонки с датами и суммами
+            date_cols = [col for col in df.columns if any(k in col.lower() for k in ['дата', 'date', 'время', 'time'])]
+            amount_cols = [col for col in df.columns if any(k in col.lower() for k in ['сумма', 'amount', 'списание', 'debit', 'зачисление', 'credit', 'операция'])]
+            
+            if date_cols:
+                st.write(f"**Колонка даты:** {date_cols[0]}")
+            if amount_cols:
+                st.write(f"**Колонка суммы:** {amount_cols[0]}")
+            
+            # Сохраняем DataFrame для анализа
+            st.session_state['bank_statement_df'] = df
+            st.session_state['bank_date_col'] = date_cols[0] if date_cols else None
+            st.session_state['bank_amount_col'] = amount_cols[0] if amount_cols else None
+            
+            # Превью данных
+            with st.expander("👁️ Посмотреть первые 10 транзакций"):
+                st.dataframe(df.head(10))
+            
+        except Exception as e:
+            st.error(f"❌ Ошибка чтения выписки: {str(e)}")
+    
+    st.markdown("---")
+    
+    # === ГЕНЕРАТОР БИЗНЕС-ПЛАНОВ ===
+    st.markdown("""<div class="ai-card card-finance"><h3 style="margin: 0 0 10px 0; color: #E74C3C;">💼 Генератор бизнес-планов</h3>
+    <p style="margin: 0; color: #A89F91;">Создай бизнес-план с финансовой моделью и анализом рынка.</p></div>""", unsafe_allow_html=True)
+    
+    st.markdown("**Параметры бизнес-плана:**")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        business_name = st.text_input("Название бизнеса:", placeholder="Например: Кофейня в центре города")
+        business_type = st.selectbox("Тип бизнеса:", [
+            "Розничная торговля",
+            "Общественное питание",
+            "Услуги",
+            "Производство",
+            "IT/Технологии",
+            "Другое"
+        ])
+        initial_investment = st.number_input("Начальные инвестиции (руб):", min_value=0, value=1000000, step=100000)
+        monthly_revenue = st.number_input("Планируемая месячная выручка (руб):", min_value=0, value=500000, step=50000)
+    
+    with col2:
+        monthly_costs = st.number_input("Месячные расходы (руб):", min_value=0, value=300000, step=50000)
+        growth_rate = st.number_input("Темп роста выручки (%/мес):", min_value=0, max_value=50, value=5, step=1)
+        planning_period = st.number_input("Горизонт планирования (мес):", min_value=6, max_value=60, value=24, step=6)
+        discount_rate = st.number_input("Ставка дисконтирования (%):", min_value=0, max_value=100, value=12, step=1)
+    
+    if st.button("📊 Создать бизнес-план с финансовой моделью", use_container_width=True):
+        if business_name.strip():
+            with st.spinner("Генерирую бизнес-план..."):
+                try:
+                    # Создаём финансовую модель
+                    years = planning_period // 12
+                    if years < 1:
+                        years = 1
+                    annual_revenue = monthly_revenue * 12
+                    annual_costs = monthly_costs * 12
+                    
+                    excel_path = create_financial_model(
+                        initial_investment, 
+                        annual_revenue, 
+                        annual_costs, 
+                        growth_rate * 12,  # Годовой рост
+                        discount_rate, 
+                        years
+                    )
+                    
+                    st.session_state['business_plan_data'] = {
+                        'name': business_name,
+                        'type': business_type,
+                        'investment': initial_investment,
+                        'monthly_revenue': monthly_revenue,
+                        'monthly_costs': monthly_costs,
+                        'growth_rate': growth_rate,
+                        'planning_period': planning_period,
+                        'discount_rate': discount_rate,
+                        'excel_path': excel_path
+                    }
+                    
+                    st.success("✅ Бизнес-план подготовлен! Теперь опиши задачу ниже.")
+                    st.info("💡 В задаче ниже ИИ автоматически использует данные бизнес-плана и финансовую модель.")
+                    
+                except Exception as e:
+                    st.error(f"❌ Ошибка: {str(e)}")
+        else:
+            st.warning("Введи название бизнеса")
+    
+    st.markdown("---")
+    
+    # === АКТУАЛЬНЫЕ ФИНАНСОВЫЕ ДАННЫЕ ===
+    st.markdown("""<div class="ai-card card-api"><h3 style="margin: 0 0 10px 0; color: #3498DB;">📈 Актуальные финансовые данные</h3>
+    <p style="margin: 0; color: #A89F91;">ЦБ РФ и Yahoo Finance для анализа рынка.</p></div>""", unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     with col1:
-        initial_investment = st.number_input("Инвестиции (руб):", min_value=0, value=1000000, step=100000)
-        annual_revenue = st.number_input("Выручка год 1 (руб):", min_value=0, value=500000, step=50000)
-        annual_costs = st.number_input("Расходы (руб):", min_value=0, value=300000, step=50000)
+        use_cbr = st.checkbox("🇷🇺 ЦБ РФ (курсы, ставка)", value=True)
     with col2:
-        growth_rate = st.number_input("Рост (%/год):", min_value=0, max_value=100, value=10, step=5)
-        discount_rate = st.number_input("Ставка дисконтирования (%):", min_value=0, max_value=100, value=12, step=1)
-        years = st.number_input("Горизонт (лет):", min_value=1, max_value=10, value=5, step=1)
+        use_yahoo = st.checkbox("🌍 Yahoo Finance", value=False)
+        yahoo_tickers = st.text_input("Тикеры конкурентов:", placeholder="AAPL, MSFT, ^GSPC", value="")
+    
+    if st.button(" Получить финансовые данные", use_container_width=True):
+        financial_parts = []
+        if use_cbr:
+            with st.spinner("ЦБ РФ..."):
+                cbr = get_cbr_data()
+                if 'error' not in cbr:
+                    text = f"## 🇷🇺 ЦБ РФ ({cbr.get('date', '')})\n**Ключевая ставка:** {cbr.get('key_rate', 'N/A')}%\n**Курсы:**\n"
+                    for code, d in cbr.get('currencies', {}).items():
+                        s = "📈" if d['change'] > 0 else "📉" if d['change'] < 0 else "➡️"
+                        text += f"- **{code}**: {d['value']:.2f} руб {s} ({d['change']:+.2f})\n"
+                    financial_parts.append(text)
+                    st.success(f"✅ ЦБ РФ: ставка {cbr.get('key_rate', 'N/A')}%")
+                else:
+                    st.error(cbr.get('error'))
+        if use_yahoo and yahoo_tickers.strip():
+            with st.spinner("Yahoo Finance..."):
+                tickers = [t.strip() for t in yahoo_tickers.split(',')]
+                yahoo_data = []
+                for ticker in tickers:
+                    data = get_yahoo_finance_data(ticker, '1mo')
+                    yahoo_data.append(data)
+                    if 'error' not in data:
+                        st.success(f"✅ {ticker}: {data.get('current_price', 0):.2f} {data.get('currency', '')}")
+                    else:
+                        st.error(f" {ticker}: {data.get('error')}")
+                st.session_state['yahoo_data'] = yahoo_data
+        
+        if financial_parts or 'yahoo_data' in st.session_state:
+            full_fin = "# 📊 АКТУАЛЬНЫЕ ФИНАНСОВЫЕ ДАННЫЕ\n\n"
+            for p in financial_parts:
+                full_fin += p + "\n"
+            if 'yahoo_data' in st.session_state:
+                full_fin += "## 🌍 Yahoo Finance (конкуренты/рынок)\n"
+                for d in st.session_state['yahoo_data']:
+                    if 'error' not in d:
+                        full_fin += f"### {d.get('ticker', '')} ({d.get('company_name', '')})\n"
+                        full_fin += f"- Цена: {d.get('current_price', 0):.2f} {d.get('currency', '')}\n"
+                        if d.get('price_change_percent'):
+                            full_fin += f"- Изменение за месяц: {d['price_change_percent']:+.2f}%\n"
+                        if d.get('market_cap'):
+                            full_fin += f"- Капитализация: {d['market_cap']:,.0f}\n"
+                        full_fin += "\n"
+            st.session_state['financial_api_data'] = full_fin
+            st.success("✅ Данные добавлены в контекст!")
     
     if st.button("📊 Создать финансовую модель", use_container_width=True):
         with st.spinner("Генерирую..."):
