@@ -95,23 +95,6 @@ st.markdown("""
         color: #A89F91 !important;
         font-weight: 400 !important;
     }
-    
-    /* Кнопка новой беседы */
-    .new-chat-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 12px !important;
-        padding: 12px 20px !important;
-        font-size: 16px !important;
-        font-weight: 600 !important;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
-        transition: all 0.3s ease !important;
-    }
-    .new-chat-btn:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -410,13 +393,7 @@ def save_projects(projects):
 
 def create_project(name, description="", branch=None):
     projects = load_projects()
-    new_project = {
-        "id": str(uuid.uuid4())[:8], 
-        "name": name, 
-        "description": description, 
-        "branch": branch,
-        "created": datetime.now().strftime("%d.%m.%Y %H:%M")
-    }
+    new_project = {"id": str(uuid.uuid4())[:8], "name": name, "description": description, "branch": branch, "created": datetime.now().strftime("%d.%m.%Y %H:%M")}
     projects.append(new_project); save_projects(projects); return new_project
 
 def delete_project(project_id):
@@ -448,8 +425,7 @@ def delete_history_entry(entry_id):
 def get_history_entry(entry_id):
     history = load_history()
     for h in history:
-        if h.get("id") == entry_id:
-            return h
+        if h.get("id") == entry_id: return h
     return None
 
 def load_key():
@@ -482,7 +458,7 @@ def analyze_image(file):
     client = OpenAI(api_key=key, base_url=BASE_URL)
     response = client.chat.completions.create(model=MODEL_CHATGPT, messages=[{
         "role": "user", "content": [
-            {"type": "text", "text": "Распознай весь текст на изображении. Опиши таблицы, схемы, подписи. Верни структурированный текст."},
+            {"type": "text", "text": "Распознай весь текст на изображении. Опиши таблицы, схемы, подписи."},
             {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{base64_image}"}}
         ]}], max_tokens=2000)
     return response.choices[0].message.content
@@ -490,243 +466,215 @@ def analyze_image(file):
 # --- ПРОМПТЫ ДЛЯ РАЗНЫХ ВЕТВЕЙ ---
 def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
     if branch == 'science':
-        chatgpt_prompt = f"""Ты — научный ассистент и исследователь. Твоя задача: подготовить ЧЕРНОВИК НАУЧНОЙ РАБОТЫ.
+        chatgpt_prompt = f"""Ты — научный ассистент. Подготовь ЧЕРНОВИК НАУЧНОЙ РАБОТЫ.
 
 {full_context}
 
-## ЗАДАЧА:
-{task}
+## ЗАДАЧА: {task}
 
-## СТРУКТУРА НАУЧНОЙ РАБОТЫ:
-1. Введение (актуальность, цель, задачи)
-2. Обзор литературы / Теоретическая часть
-3. Методология / Основная часть
-4. Результаты и анализ
-5. Выводы и рекомендации
+## СТРУКТУРА:
+1. Введение
+2. Обзор литературы
+3. Методология
+4. Результаты
+5. Выводы
 6. СПИСОК ЛИТЕРАТУРЫ
 
-## ТРЕБОВАНИЯ:
-- Строго опирайся на источники
-- Цитируй: книги как [К1], статьи как [1], данные как [Данные]
-- Научный стиль изложения
-- В конце обязательно добавь СПИСОК ЛИТЕРАТУРЫ
+Цитируй: книги [К1], статьи [1], данные [Данные]. Научный стиль."""
 
-Напиши полный черновик научной работы."""
-
-        claude_prompt = f"""Ты — строгий научный рецензент (рецензент научного журнала). Проверь черновик научной работы.
+        claude_prompt = f"""Ты — научный рецензент. Проверь черновик.
 
 {full_context}
 
-## ЗАДАЧА:
-{task}
+## ЗАДАЧА: {task}
+## ЧЕРНОВИК: {draft}
 
-## ЧЕРНОВИК:
-{draft}
+Проверь: источники, цитаты, структуру, доказательства. Будь строгим."""
 
-## ПРОВЕРЬ:
-1. ✅ Все ли утверждения подкреплены источниками?
-2. ✅ Корректны ли цитаты и ссылки?
-3. ✅ Есть ли список литературы и соответствует ли он цитированиям?
-4. ✅ Соблюдена ли структура научной работы?
-5. ️ Какие утверждения требуют дополнительных доказательств?
-6. ❌ Что упущено из источников?
-
-Будь МАКСИМАЛЬНО строгим как рецензент научного журнала."""
-
-        qwen_prompt = f"""Ты — главный редактор научного журнала. Создай ФИНАЛЬНУЮ ВЕРСИЮ научной работы.
+        qwen_prompt = f"""Ты — главный редактор научного журнала. Создай ФИНАЛЬНУЮ ВЕРСИЮ.
 
 {full_context}
 
-## ЗАДАЧА:
-{task}
+## ЗАДАЧА: {task}
+## ЧЕРНОВИК: {draft}
+## КРИТИКА: {critique}
 
-## ЧЕРНОВИК:
-{draft}
-
-## КРИТИКА РЕЦЕНЗЕНТА:
-{critique}
-
-## ТРЕБОВАНИЯ:
-1. Исправь ВСЕ замечания рецензента
-2. Добавь недостающие цитаты [К1], [1], [Данные]
-3. Соблюдай структуру: Введение → Обзор → Методология → Результаты → Выводы → Список литературы
-4. Научный стиль, академическая точность
-5. В конце — полный СПИСОК ЛИТЕРАТУРЫ
-
-Создай финальную версию научной работы, готовую к публикации."""
+Исправь замечания, добавь цитаты, создай список литературы."""
 
     elif branch == 'legal':
-        chatgpt_prompt = f"""Ты — практикующий юрист с 15-летним стажем. Твоя задача: подготовить ПРОЕКТ ЮРИДИЧЕСКОГО ДОКУМЕНТА.
+        chatgpt_prompt = f"""Ты — практикующий юрист с 15-летним стажем. Подготовь ПРОЕКТ ЮРИДИЧЕСКОГО ДОКУМЕНТА.
 
 {full_context}
 
-## ЗАДАЧА:
-{task}
+## ЗАДАЧА: {task}
 
-## ТРЕБОВАНИЯ К ЮРИДИЧЕСКОМУ ДОКУМЕНТУ:
-- Строгий юридический стиль (не научный!)
-- Ссылки на конкретные статьи законов (ГК РФ, УК РФ, АПК РФ и т.д.)
-- Чёткая структура документа (преамбула, разделы, пункты, подписи)
-- Практическая применимость — документ должен быть готов к использованию
-- Если это договор — все существенные условия
-- Если это иск/жалоба — ссылки на нормы права и судебную практику
-- НЕ пиши научную статью — пиши именно документ!
-
-## ФОРМАТ:
-Начни с названия документа, затем преамбула/вводная часть, затем основное содержание по разделам, в конце — подписи/реквизиты.
+## ТРЕБОВАНИЯ:
+- Строгий юридический стиль (НЕ научный!)
+- Ссылки на статьи законов (ГК РФ, УК РФ, АПК РФ)
+- Чёткая структура: преамбула, разделы, пункты, подписи
+- Готовность к использованию
+- НЕ пиши научную статью!
 
 Подготовь полный проект документа."""
 
-        claude_prompt = f"""Ты — опытный юрист-рецензент, старший партнёр юридической фирмы. Проверь проект юридического документа.
+        claude_prompt = f"""Ты — старший партнёр юридической фирмы. Проверь проект документа.
 
 {full_context}
 
-## ЗАДАЧА:
-{task}
+## ЗАДАЧА: {task}
+## ПРОЕКТ: {draft}
 
-## ПРОЕКТ ДОКУМЕНТА:
-{draft}
+Проверь: условия, ссылки на законы, риски, соответствие законодательству РФ. Будь строгим."""
 
-## ПРОВЕРЬ:
-1. ✅ Все ли существенные условия включены?
-2. ✅ Корректны ли ссылки на нормы права (статьи законов)?
-3. ✅ Нет ли юридических рисков и двусмысленностей?
-4. ✅ Соответствует ли документ актуальному законодательству РФ?
-5. ⚠️ Какие пункты могут быть оспорены в суде?
-6. ❌ Что упущено и может создать проблемы?
-7. ⚖️ Если есть мнение внешнего ИИ (Cognevia/ПравоТех) — учтено ли оно?
-
-Будь МАКСИМАЛЬНО строгим. Найди все юридические риски."""
-
-        qwen_prompt = f"""Ты — старший партнёр юридической фирмы. Создай ФИНАЛЬНУЮ ВЕРСИЮ юридического документа.
+        qwen_prompt = f"""Ты — старший партнёр юрфирмы. Создай ФИНАЛЬНУЮ ВЕРСИЮ юридического документа.
 
 {full_context}
 
-## ЗАДАЧА:
-{task}
+## ЗАДАЧА: {task}
+## ПРОЕКТ: {draft}
+## ЗАМЕЧАНИЯ: {critique}
 
-## ПРОЕКТ:
-{draft}
-
-## ЗАМЕЧАНИЯ РЕЦЕНЗЕНТА:
-{critique}
-
-## ТРЕБОВАНИЯ:
-1. Исправь ВСЕ юридические риски, указанные рецензентом
-2. Добавь недостающие ссылки на нормы права
-3. Устрани все двусмысленности
-4. Соблюдай строгий юридический стиль
-5. Документ должен быть готов к подписанию/подаче в суд
-6. НЕ пиши научную статью — это должен быть именно юридический документ!
-
-Создай финальную версию документа, готовую к использованию."""
+Исправь риски, добавь ссылки на нормы права. Документ должен быть готов к использованию. НЕ пиши научную статью!"""
 
     else:  # business
-        chatgpt_prompt = f"""Ты — бизнес-аналитик и финансовый консультант уровня McKinsey/BCG. Твоя задача: подготовить БИЗНЕС-ОТЧЁТ / АНАЛИТИЧЕСКИЙ ДОКУМЕНТ.
+        business_context = ""
+        if 'business_plan_data' in st.session_state:
+            bp = st.session_state['business_plan_data']
+            business_context = f"""
+## ДАННЫЕ БИЗНЕС-ПЛАНА:
+- Название: {bp['name']}
+- Тип: {bp['type']}
+- Инвестиции: {bp['investment']:,} руб
+- Месячная выручка: {bp['monthly_revenue']:,} руб
+- Месячные расходы: {bp['monthly_costs']:,} руб
+- Рост: {bp['growth_rate']}%/мес
+- Период: {bp['planning_period']} мес
+"""
+        
+        bank_context = ""
+        if 'bank_statement_df' in st.session_state:
+            df = st.session_state['bank_statement_df']
+            bank_context = f"\n## БАНКОВСКАЯ ВЫПИСКА: {len(df)} транзакций\n"
+            if st.session_state.get('bank_amount_col'):
+                ac = st.session_state['bank_amount_col']
+                bank_context += f"- Сумма операций: {df[ac].sum():,.2f} руб\n"
+                bank_context += f"- Средняя: {df[ac].mean():,.2f} руб\n"
+                bank_context += f"- Макс: {df[ac].max():,.2f} руб\n"
+        
+        chatgpt_prompt = f"""Ты — бизнес-аналитик и финансовый консультант уровня McKinsey/BCG с опытом CFO. Проведи глубокий ФИНАНСОВЫЙ АНАЛИЗ.
 
 {full_context}
+{business_context}
+{bank_context}
 
-## ЗАДАЧА:
-{task}
-
-## СТРУКТУРА БИЗНЕС-ОТЧЁТА:
-1. Резюме (Executive Summary) — ключевые выводы на 1 странице
-2. Анализ ситуации / рынка
-3. Финансовый анализ (если есть данные)
-4. Оценка рисков
-5. Рекомендации и план действий
-6. Приложения (расчёты, таблицы)
+## ЗАДАЧА: {task}
 
 ## ТРЕБОВАНИЯ:
-- Деловой стиль, конкретика, цифры
-- Используй данные из финансовых API (курсы валют, ключевая ставка, котировки)
-- Если есть Excel — проведи полноценный финансовый анализ
-- Цитируй источники: [Данные], [Финансы], [1]
-- Практические рекомендации, а не теория
 
-Подготовь полный бизнес-отчёт."""
+### Если анализируешь банковскую выписку:
+1. Категоризируй транзакции (аренда, зарплаты, закупки, маркетинг, налоги)
+2. Найди аномалии и подозрительные операции
+3. Проанализируй cash flow по неделям/месяцам
+4. Выяви причины убытков — конкретные статьи расходов
+5. Сравни с отраслевыми нормами
+6. Дай рекомендации по оптимизации
 
-        claude_prompt = f"""Ты — финансовый аудитор и бизнес-консультант. Проверь бизнес-отчёт.
+### Если создаёшь бизнес-план:
+1. Резюме (Executive Summary)
+2. Описание бизнеса и концепция
+3. Анализ рынка и конкурентов
+4. Финансовый план (выручка, расходы, точка безубыточности, NPV, IRR)
+5. Оценка рисков
+6. План действий на 3/6/12 месяцев
+
+### Если проводишь финансовый анализ:
+1. Ключевые метрики (рентабельность, ликвидность)
+2. Вертикальный анализ (структура расходов)
+3. Горизонтальный анализ (динамика)
+4. Сравнение с отраслью
+5. Проблемные зоны
+6. Рекомендации
+
+## СТРУКТУРА ОТЧЁТА:
+1. Резюме
+2. Детальный анализ
+3. Ключевые выводы
+4. Рекомендации
+
+Используй реальные данные, цифры, ссылки на источники. Деловой стиль."""
+
+        claude_prompt = f"""Ты — финансовый аудитор из Big4 (Deloitte, PwC). Проверь отчёт.
 
 {full_context}
+{business_context}
+{bank_context}
 
-## ЗАДАЧА:
-{task}
-
-## ОТЧЁТ:
-{draft}
+## ЗАДАЧА: {task}
+## ОТЧЁТ: {draft}
 
 ## ПРОВЕРЬ:
-1. ✅ Все ли расчёты корректны?
-2. ✅ Использованы ли актуальные финансовые данные (курсы, ставки)?
-3. ✅ Реалистичны ли прогнозы и допущения?
-4. ✅ Учтены ли все ключевые риски?
-5. ️ Какие выводы недостаточно обоснованы?
-6. 📊 Что упущено в анализе?
+1. Корректность расчётов
+2. Актуальность данных
+3. Реалистичность прогнозов
+4. Выявлены ли все проблемы
+5. Причины убытков (если есть)
+6. Учтены ли все статьи расходов
+7. Сравнение с отраслью
+8. Реалистичность рекомендаций
+9. Категоризация транзакций (если выписка)
+10. Найденные аномалии
 
-Будь строгим как финансовый аудитор."""
+Будь МАКСИМАЛЬНО строгим."""
 
-        qwen_prompt = f"""Ты — инвестиционный консультант и стратег. Создай ФИНАЛЬНУЮ ВЕРСИЮ бизнес-отчёта.
+        qwen_prompt = f"""Ты — инвестиционный консультант и стратег с опытом CFO. Создай ФИНАЛЬНУЮ ВЕРСИЮ.
 
 {full_context}
+{business_context}
+{bank_context}
 
-## ЗАДАЧА:
-{task}
-
-## ОТЧЁТ:
-{draft}
-
-## ЗАМЕЧАНИЯ АУДИТОРА:
-{critique}
+## ЗАДАЧА: {task}
+## ЧЕРНОВИК: {draft}
+## ЗАМЕЧАНИЯ АУДИТОРА: {critique}
 
 ## ТРЕБОВАНИЯ:
-1. Исправь все замечания аудитора
-2. Добавь недостающие финансовые расчёты
-3. Используй актуальные данные (курсы, ставки, котировки)
-4. Деловой стиль, конкретные цифры и рекомендации
-5. Структура: Резюме → Анализ → Финансы → Риски → Рекомендации
+1. Исправь все замечания
+2. Добавь финансовые расчёты
+3. Используй актуальные данные (ЦБ РФ, Yahoo Finance)
+4. Если есть выписка — полный анализ транзакций
+5. Если есть бизнес-план — интегрируй финмодель (NPV, IRR)
+6. Деловой стиль, цифры, рекомендации
+7. Структура: Резюме → Анализ → Выводы → Рекомендации
 
-Создай финальный бизнес-отчёт, готовый для презентации руководству или инвесторам."""
+Если анализируешь убытки — дай рекомендации по каждой статье.
+Если бизнес-план — покажи точку безубыточности и срок окупаемости.
+
+Создай финальный отчёт для презентации."""
 
     return chatgpt_prompt, claude_prompt, qwen_prompt
 
-# --- ФУНКЦИЯ ОТОБРАЖЕНИЯ ОТКРЫТОЙ БЕСЕДЫ ---
+# --- ОТОБРАЖЕНИЕ ОТКРЫТОЙ БЕСЕДЫ ---
 def display_opened_entry(entry):
-    if not entry:
-        return
-    
+    if not entry: return
     branch = entry.get('branch', 'science')
     branch_names = {'science': '🎓 Научная ветвь', 'legal': '⚖️ Юридическая ветвь', 'business': '💼 Бизнес-финансовая ветвь'}
     branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60'}
     
     st.markdown(f"""<div class="ai-card" style="border-left: 8px solid {branch_colors.get(branch, '#8B5E3C')};">
-        <h3 style="margin: 0; color: {branch_colors.get(branch, '#8B5E3C')};"> {entry.get('task', 'Без названия')[:80]}</h3>
-        <p style="margin: 10px 0 0 0; color: #A89F91;">{branch_names.get(branch, 'Неизвестная ветвь')} • {entry.get('date', '')}</p>
+        <h3 style="margin: 0; color: {branch_colors.get(branch, '#8B5E3C')};"> {entry.get('task', '')[:80]}</h3>
+        <p style="margin: 10px 0 0 0; color: #A89F91;">{branch_names.get(branch, '')} • {entry.get('date', '')}</p>
     </div>""", unsafe_allow_html=True)
-    
     st.markdown("---")
-    
-    st.markdown("### 📝 Задача")
-    st.info(entry.get('task', ''))
-    
-    if entry.get('file'):
-        st.markdown(f"**📎 Файл:** {entry['file']}")
-    
+    st.markdown("### 📝 Задача"); st.info(entry.get('task', ''))
+    if entry.get('file'): st.markdown(f"**📎 Файл:** {entry['file']}")
     st.markdown("---")
-    
-    st.markdown(f"""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️⃣ Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️⃣ Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
     st.write(entry.get('draft', ''))
-    
     st.markdown("---")
-    
-    st.markdown(f"""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️⃣ Критика от Claude</h3></div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️ Критика от Claude</h3></div>""", unsafe_allow_html=True)
     st.write(entry.get('critique', ''))
-    
     st.markdown("---")
-    
-    st.markdown(f"""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️ ✅ Финальный результат от Qwen</h3></div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️⃣ ✅ Финал от Qwen</h3></div>""", unsafe_allow_html=True)
     st.write(entry.get('final', ''))
-    
     st.markdown("---")
     
     doc = docx.Document()
@@ -736,7 +684,6 @@ def display_opened_entry(entry):
     doc.add_heading('1. Черновик', level=2); doc.add_paragraph(entry.get('draft', ''))
     doc.add_heading('2. Критика', level=2); doc.add_paragraph(entry.get('critique', ''))
     doc.add_heading('3. Финал', level=2); doc.add_paragraph(entry.get('final', ''))
-    
     with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
         doc.save(tmp.name); tmp_path = tmp.name
     with open(tmp_path, "rb") as f:
@@ -746,31 +693,23 @@ def display_opened_entry(entry):
     os.remove(tmp_path)
 
 # --- ИНТЕРФЕЙС ---
-
-# Инициализация session state
-if 'branch' not in st.session_state:
-    st.session_state['branch'] = None
-if 'open_entry' not in st.session_state:
-    st.session_state['open_entry'] = None
-if 'selected_project' not in st.session_state:
-    st.session_state['selected_project'] = None
-if 'show_new_chat' not in st.session_state:
-    st.session_state['show_new_chat'] = False
+if 'branch' not in st.session_state: st.session_state['branch'] = None
+if 'open_entry' not in st.session_state: st.session_state['open_entry'] = None
+if 'selected_project' not in st.session_state: st.session_state['selected_project'] = None
+if 'show_new_chat' not in st.session_state: st.session_state['show_new_chat'] = False
 
 # --- БОКОВАЯ ПАНЕЛЬ ---
-st.sidebar.header("📁 Проекты")
-
+st.sidebar.header(" Проекты")
 current_branch = st.session_state.get('branch')
 branch_projects = get_projects_by_branch(current_branch)
 
-with st.sidebar.expander("➕ Новый проект"):
-    new_project_name = st.text_input("Название проекта:", placeholder="Например: Научная статья об ИИ")
+with st.sidebar.expander(" Новый проект"):
+    new_project_name = st.text_input("Название проекта:", placeholder="Например: Научная статья")
     new_project_desc = st.text_area("Описание:", height=80)
     if st.button("Создать проект"):
         if new_project_name.strip():
             create_project(new_project_name.strip(), new_project_desc.strip(), branch=current_branch)
-            st.success(f"Проект '{new_project_name}' создан!")
-            st.rerun()
+            st.success(f"Проект '{new_project_name}' создан!"); st.rerun()
         else: st.warning("Введите название")
 
 st.sidebar.markdown("---")
@@ -782,11 +721,9 @@ if branch_projects:
         selected_project = branch_projects[project_names.index(selected_name)]
         st.session_state['selected_project'] = selected_project
     else:
-        selected_project = None
-        st.session_state['selected_project'] = None
+        selected_project = None; st.session_state['selected_project'] = None
 else:
-    st.sidebar.info(f"Нет проектов в этой ветви. Создай первый!")
-    selected_project = None
+    st.sidebar.info("Нет проектов в этой ветви. Создай первый!"); selected_project = None
 
 if selected_project:
     st.sidebar.caption(f"Проект: {selected_project['name']}")
@@ -796,17 +733,13 @@ if selected_project:
 
 st.sidebar.markdown("---")
 
-# --- КНОПКА НОВОЙ БЕСЕДЫ В САЙДБАРЕ ---
 if st.session_state['branch']:
     if st.sidebar.button("💬 Новая беседа", key="new_chat_sidebar", use_container_width=True):
-        st.session_state['show_new_chat'] = True
-        st.session_state['open_entry'] = None
-        st.rerun()
+        st.session_state['show_new_chat'] = True; st.session_state['open_entry'] = None; st.rerun()
 
 st.sidebar.markdown("---")
 
-# --- ИСТОРИЯ БЕСЕД ---
-st.sidebar.header("📂 История бесед")
+st.sidebar.header(" История бесед")
 history = load_history()
 
 if selected_project:
@@ -821,154 +754,98 @@ if visible_history:
     for entry in reversed(visible_history):
         short = entry["task"][:35] + "..." if len(entry["task"]) > 35 else entry["task"]
         date_str = entry.get('date', '')
-        
         if st.sidebar.button(f"📝 {short}\n<span class='history-btn-date'>{date_str}</span>", 
-                            key=f"open_{entry.get('id', '')}", 
-                            use_container_width=True,
-                            type="secondary"):
-            st.session_state['open_entry'] = entry.get('id')
-            st.session_state['show_new_chat'] = False
-            st.rerun()
-        
+                            key=f"open_{entry.get('id', '')}", use_container_width=True, type="secondary"):
+            st.session_state['open_entry'] = entry.get('id'); st.session_state['show_new_chat'] = False; st.rerun()
         col1, col2 = st.sidebar.columns([4, 1])
         with col2:
-            if st.button("🗑", key=f"del_{entry.get('id', '')}", help="Удалить беседу"):
+            if st.button("🗑", key=f"del_{entry.get('id', '')}", help="Удалить"):
                 delete_history_entry(entry.get("id"))
-                if st.session_state.get('open_entry') == entry.get('id'):
-                    st.session_state['open_entry'] = None
-                st.sidebar.success("✅ Удалено")
-                st.rerun()
+                if st.session_state.get('open_entry') == entry.get('id'): st.session_state['open_entry'] = None
+                st.sidebar.success("✅ Удалено"); st.rerun()
 else:
     st.sidebar.info("Пока нет бесед")
 
 st.sidebar.markdown("---")
-if load_key(): st.sidebar.success(" Ключ активен")
+if load_key(): st.sidebar.success("🔑 Ключ активен")
 else: st.sidebar.error("❌ Ключ не найден")
 
-# Кнопка выхода из ветви
 if st.session_state['branch']:
     if st.sidebar.button("🏠 Вернуться к выбору ветви"):
-        st.session_state['branch'] = None
-        st.session_state['open_entry'] = None
-        st.session_state['selected_project'] = None
-        st.session_state['show_new_chat'] = False
-        st.rerun()
+        st.session_state['branch'] = None; st.session_state['open_entry'] = None
+        st.session_state['selected_project'] = None; st.session_state['show_new_chat'] = False; st.rerun()
 
 # === ГЛАВНАЯ ЛОГИКА ===
-
-# Проверяем, открыта ли беседа из истории
 if st.session_state['open_entry']:
     entry = get_history_entry(st.session_state['open_entry'])
     if entry:
         display_opened_entry(entry)
-        
-        # Кнопки после просмотра беседы
         col1, col2 = st.columns(2)
         with col1:
             if st.button("← Закрыть беседу", use_container_width=True):
-                st.session_state['open_entry'] = None
-                st.rerun()
+                st.session_state['open_entry'] = None; st.rerun()
         with col2:
             if st.button("💬 Новая беседа", use_container_width=True):
-                st.session_state['open_entry'] = None
-                st.session_state['show_new_chat'] = True
-                st.rerun()
+                st.session_state['open_entry'] = None; st.session_state['show_new_chat'] = True; st.rerun()
         st.stop()
     else:
         st.session_state['open_entry'] = None
 
-# === ВЫБОР ВЕТВИ ИЛИ РАБОТА ===
 if not st.session_state['branch']:
-    # СТАРТОВАЯ СТРАНИЦА
     st.markdown("""<div class="ai-card"><h3 style="margin: 0; color: #8B5E3C;">🤖 Совет ИИ</h3>
     <p style="margin: 10px 0 0 0; color: #A89F91;">Выбери направление работы. В каждой ветви свои проекты, беседы и инструменты.</p></div>""", unsafe_allow_html=True)
-    
     st.markdown("---")
-    
     col1, col2, col3 = st.columns(3)
-    
     with col1:
-        st.markdown("""
-        <div class="branch-card branch-science">
-            <h3 style="color: #9B59B6; margin: 0 0 10px 0;"> Научная ветвь</h3>
-            <p style="color: #666; margin: 0 0 15px 0;">Научные статьи, диссертации, обзоры литературы</p>
-            <p style="color: #888; font-size: 0.9em; margin: 0;">
-            ✅ Научный поиск (КиберЛенинка, OpenAlex, Semantic Scholar)<br>
-            ✅ Моя научная библиотека<br>
-            ✅ Структура: Введение → Обзор → Методология → Выводы → Список литературы
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("""<div class="branch-card branch-science">
+            <h3 style="color: #9B59B6; margin: 0 0 10px 0;">🎓 Научная ветвь</h3>
+            <p style="color: #666; margin: 0 0 15px 0;">Научные статьи, диссертации, обзоры</p>
+            <p style="color: #888; font-size: 0.9em; margin: 0;">✅ Научный поиск<br>✅ Библиотека<br>✅ Научная структура</p>
+        </div>""", unsafe_allow_html=True)
         if st.button("🎓 Научная ветвь", key="btn_science", use_container_width=True):
-            st.session_state['branch'] = 'science'
-            st.session_state['selected_project'] = None
-            st.session_state['show_new_chat'] = False
-            st.rerun()
-    
+            st.session_state['branch'] = 'science'; st.session_state['selected_project'] = None; st.session_state['show_new_chat'] = False; st.rerun()
     with col2:
-        st.markdown("""
-        <div class="branch-card branch-legal">
+        st.markdown("""<div class="branch-card branch-legal">
             <h3 style="color: #2C3E50; margin: 0 0 10px 0;">⚖️ Юридическая ветвь</h3>
-            <p style="color: #666; margin: 0 0 15px 0;">Договоры, иски, претензии, жалобы, письма</p>
-            <p style="color: #888; font-size: 0.9em; margin: 0;">
-            ✅ Мнение внешнего ИИ (Cognevia, ПравоТех)<br>
-            ✅ Строгий юридический стиль<br>
-            ✅ Ссылки на нормы права и судебную практику
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("️ Юридическая ветвь", key="btn_legal", use_container_width=True):
-            st.session_state['branch'] = 'legal'
-            st.session_state['selected_project'] = None
-            st.session_state['show_new_chat'] = False
-            st.rerun()
-    
+            <p style="color: #666; margin: 0 0 15px 0;">Договоры, иски, претензии, жалобы</p>
+            <p style="color: #888; font-size: 0.9em; margin: 0;">✅ Мнение Cognevia/ПравоТех<br>✅ Юридический стиль<br>✅ Нормы права</p>
+        </div>""", unsafe_allow_html=True)
+        if st.button("⚖️ Юридическая ветвь", key="btn_legal", use_container_width=True):
+            st.session_state['branch'] = 'legal'; st.session_state['selected_project'] = None; st.session_state['show_new_chat'] = False; st.rerun()
     with col3:
-        st.markdown("""
-        <div class="branch-card branch-business">
+        st.markdown("""<div class="branch-card branch-business">
             <h3 style="color: #27AE60; margin: 0 0 10px 0;">💼 Бизнес-финансовая ветвь</h3>
-            <p style="color: #666; margin: 0 0 15px 0;">Бизнес-планы, финансовые отчёты, анализ</p>
-            <p style="color: #888; font-size: 0.9em; margin: 0;">
-            ✅ Генератор финансовых моделей (NPV, IRR, ROI)<br>
-            ✅ Актуальные данные (ЦБ РФ, Yahoo Finance)<br>
-            ✅ Деловой стиль с цифрами и рекомендациями
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+            <p style="color: #666; margin: 0 0 15px 0;">Бизнес-планы, финмодели, анализ выписок</p>
+            <p style="color: #888; font-size: 0.9em; margin: 0;">✅ Анализ банковских выписок<br>✅ Генератор бизнес-планов<br>✅ ЦБ РФ и Yahoo Finance</p>
+        </div>""", unsafe_allow_html=True)
         if st.button("💼 Бизнес-финансовая ветвь", key="btn_business", use_container_width=True):
-            st.session_state['branch'] = 'business'
-            st.session_state['selected_project'] = None
-            st.session_state['show_new_chat'] = False
-            st.rerun()
-    
+            st.session_state['branch'] = 'business'; st.session_state['selected_project'] = None; st.session_state['show_new_chat'] = False; st.rerun()
     st.stop()
 
 # === РАБОТА ВНУТРИ ВЕТВИ ===
 branch = st.session_state['branch']
 branch_names = {'science': '🎓 Научная ветвь', 'legal': '⚖️ Юридическая ветвь', 'business': '💼 Бизнес-финансовая ветвь'}
 branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60'}
-
 project_label = selected_project['name'] if selected_project else '💬 Быстрый диалог'
+
 st.markdown(f"""<div class="ai-card" style="border-left: 8px solid {branch_colors[branch]};">
     <h3 style="margin: 0; color: {branch_colors[branch]};">{branch_names[branch]}</h3>
     <p style="margin: 10px 0 0 0; color: #A89F91;">{project_label}</p>
 </div>""", unsafe_allow_html=True)
 
-# Кнопка новой беседы в основном интерфейсе
 if st.session_state.get('show_new_chat'):
     st.markdown("""<div class="ai-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center;">
-        <h3 style="margin: 0; color: white;">🎉 Готов к новой беседе!</h3>
-        <p style="margin: 10px 0 0 0; opacity: 0.9;">Введи новую задачу ниже или загрузи файлы</p>
+        <h3 style="margin: 0; color: white;"> Готов к новой беседе!</h3>
+        <p style="margin: 10px 0 0 0; opacity: 0.9;">Введи новую задачу ниже</p>
     </div>""", unsafe_allow_html=True)
     st.session_state['show_new_chat'] = False
 
 st.markdown("---")
 
-# === ИНСТРУМЕНТЫ ВЕТВИ ===
+# === ИНСТРУМЕНТЫ ВЕТВЕЙ ===
 if branch == 'science':
     st.markdown("""<div class="ai-card card-library"><h3 style="margin: 0 0 10px 0; color: #9B59B6;">📚 Моя научная библиотека</h3>
-    <p style="margin: 0; color: #A89F91;">Укажи путь к папке с учебниками и монографиями.</p></div>""", unsafe_allow_html=True)
-    
+    <p style="margin: 0; color: #A89F91;">Укажи путь к папке с учебниками.</p></div>""", unsafe_allow_html=True)
     library_path = st.text_input("Путь к папке:", placeholder="C:\\Users\\123\\Documents\\Научная_библиотека")
     col1, col2 = st.columns(2)
     with col1:
@@ -981,24 +858,19 @@ if branch == 'science':
             else: st.warning("Введи путь")
     with col2:
         use_library = st.checkbox("📖 Использовать библиотеку", value=False)
-    
     if 'library_books' in st.session_state:
         st.markdown(f"### 📚 Найдено: {len(st.session_state['library_books'])} книг")
         for i, book in enumerate(st.session_state['library_books'][:5], 1):
             st.markdown(f"**{i}.** {book['title']} — {book['author']} ({book['year']})")
-    
     st.markdown("---")
-    
     st.markdown("""<div class="ai-card card-search"><h3 style="margin: 0 0 10px 0; color: #5B8DB8;">🔬 Научный поиск</h3>
-    <p style="margin: 0; color: #A89F91;">Поиск по научным базам данных.</p></div>""", unsafe_allow_html=True)
-    
+    <p style="margin: 0; color: #A89F91;">Поиск по научным базам.</p></div>""", unsafe_allow_html=True)
     search_query = st.text_input("Тема поиска:", placeholder="artificial intelligence in civil law")
     col1, col2, col3 = st.columns(3)
-    with col1: use_cyberleninka = st.checkbox("🇷🇺 КиберЛенинка", value=True)
+    with col1: use_cyberleninka = st.checkbox("🇺 КиберЛенинка", value=True)
     with col2: use_openalex = st.checkbox("🌍 OpenAlex", value=True)
     with col3: use_semantic = st.checkbox("🤖 Semantic Scholar", value=True)
-    deep_analysis = st.checkbox("🎓 Глубокое исследование (скачать полные тексты)", value=True)
-    
+    deep_analysis = st.checkbox("🎓 Глубокое исследование", value=True)
     if st.button("🔍 Найти статьи", use_container_width=True):
         if search_query.strip():
             all_articles = []
@@ -1008,51 +880,34 @@ if branch == 'science':
                 with st.spinner("OpenAlex..."): all_articles.extend(search_openalex(search_query))
             if use_semantic:
                 with st.spinner("Semantic Scholar..."): all_articles.extend(search_semantic_scholar(search_query))
-            
             full_text = [a for a in all_articles if a.get('has_full_text', False)]
             if deep_analysis and full_text:
                 with st.spinner(f"Скачиваю {min(len(full_text), MAX_ARTICLES)} статей..."):
                     articles_with_text = []
                     for article in full_text[:MAX_ARTICLES]:
-                        text = download_and_extract_pdf(article['pdf_url'])
-                        article['full_text'] = text; articles_with_text.append(article)
-                st.session_state['deep_analysis_articles'] = articles_with_text
-                st.success(f"✅ Скачано {len(articles_with_text)} статей!")
+                        text = download_and_extract_pdf(article['pdf_url']); article['full_text'] = text; articles_with_text.append(article)
+                st.session_state['deep_analysis_articles'] = articles_with_text; st.success(f"✅ Скачано {len(articles_with_text)}!")
             else:
-                st.session_state['search_results'] = all_articles
-                st.success(f"Найдено: {len(all_articles)}")
+                st.session_state['search_results'] = all_articles; st.success(f"Найдено: {len(all_articles)}")
         else: st.warning("Введи тему")
 
 elif branch == 'legal':
-    st.markdown("""<div class="ai-card card-external"><h3 style="margin: 0 0 10px 0; color: #6B9080;">️ Мнение внешнего юридического ИИ</h3>
-    <p style="margin: 0; color: #A89F91;">Вставь ответ от Cognevia, ПравоТех, Doczilla (необязательно).</p></div>""", unsafe_allow_html=True)
-    
-    external_ai_opinion = st.text_area("Ответ от внешнего ИИ:", height=120, 
-        placeholder="Скопируй сюда анализ от Cognevia, ПравоТех или другого юридического ИИ...")
-    
+    st.markdown("""<div class="ai-card card-external"><h3 style="margin: 0 0 10px 0; color: #6B9080;">⚖️ Мнение внешнего ИИ</h3>
+    <p style="margin: 0; color: #A89F91;">Cognevia, ПравоТех, Doczilla (необязательно).</p></div>""", unsafe_allow_html=True)
+    external_ai_opinion = st.text_area("Ответ от внешнего ИИ:", height=120, placeholder="Скопируй анализ от Cognevia...")
     st.markdown("---")
-    
-    st.markdown("""<div class="ai-card"><h3 style="margin: 0 0 10px 0; color: #2C3E50;"> Тип юридического документа</h3>
-    <p style="margin: 0; color: #A89F91;">Выбери тип — это поможет ИИ понять структуру документа.</p></div>""", unsafe_allow_html=True)
-    
+    st.markdown("""<div class="ai-card"><h3 style="margin: 0 0 10px 0; color: #2C3E50;">📋 Тип документа</h3>
+    <p style="margin: 0; color: #A89F91;">Выбери тип — поможет ИИ понять структуру.</p></div>""", unsafe_allow_html=True)
     doc_type = st.selectbox("Тип документа:", [
-        "Договор (купли-продажи, аренды, оказания услуг и т.д.)",
-        "Исковое заявление",
-        "Претензия",
-        "Жалоба (в суд, прокуратуру, Роспотребнадзор)",
-        "Юридическое письмо",
-        "Правовое заключение (memo)",
-        "Другое (укажу в задаче)"
+        "Договор (купли-продажи, аренды, услуг)", "Исковое заявление", "Претензия",
+        "Жалоба (в суд, прокуратуру)", "Юридическое письмо", "Правовое заключение", "Другое"
     ], index=0)
 
 elif branch == 'business':
-    elif branch == 'business':
-    # === АНАЛИЗ БАНКОВСКИХ ВЫПИСОК ===
-    st.markdown("""<div class="ai-card card-api"><h3 style="margin: 0 0 10px 0; color: #3498DB;"> Анализ банковских выписок</h3>
-    <p style="margin: 0; color: #A89F91;">Загрузи выписку (CSV, Excel) — ИИ найдёт причины убытков и аномалии.</p></div>""", unsafe_allow_html=True)
-    
+    # Анализ банковских выписок
+    st.markdown("""<div class="ai-card card-api"><h3 style="margin: 0 0 10px 0; color: #3498DB;">🏦 Анализ банковских выписок</h3>
+    <p style="margin: 0; color: #A89F91;">Загрузи выписку (CSV, Excel) — ИИ найдёт причины убытков.</p></div>""", unsafe_allow_html=True)
     bank_statement = st.file_uploader("Загрузи банковскую выписку:", type=['csv', 'xlsx', 'xls'])
-    
     if bank_statement is not None:
         try:
             fn = bank_statement.name.lower()
@@ -1060,183 +915,65 @@ elif branch == 'business':
                 df = pd.read_csv(bank_statement, encoding='utf-8', on_bad_lines='skip')
             else:
                 df = pd.read_excel(bank_statement)
-            
             st.success(f"✅ Выписка загружена: {len(df)} транзакций")
-            
-            # Автоматический анализ структуры
             st.info(f"**Столбцы:** {', '.join(df.columns.tolist())}")
-            
-            # Пытаемся найти колонки с датами и суммами
             date_cols = [col for col in df.columns if any(k in col.lower() for k in ['дата', 'date', 'время', 'time'])]
             amount_cols = [col for col in df.columns if any(k in col.lower() for k in ['сумма', 'amount', 'списание', 'debit', 'зачисление', 'credit', 'операция'])]
-            
-            if date_cols:
-                st.write(f"**Колонка даты:** {date_cols[0]}")
-            if amount_cols:
-                st.write(f"**Колонка суммы:** {amount_cols[0]}")
-            
-            # Сохраняем DataFrame для анализа
+            if date_cols: st.write(f"**Колонка даты:** {date_cols[0]}")
+            if amount_cols: st.write(f"**Колонка суммы:** {amount_cols[0]}")
             st.session_state['bank_statement_df'] = df
             st.session_state['bank_date_col'] = date_cols[0] if date_cols else None
             st.session_state['bank_amount_col'] = amount_cols[0] if amount_cols else None
-            
-            # Превью данных
-            with st.expander("👁️ Посмотреть первые 10 транзакций"):
-                st.dataframe(df.head(10))
-            
-        except Exception as e:
-            st.error(f"❌ Ошибка чтения выписки: {str(e)}")
+            with st.expander("👁️ Первые 10 транзакций"): st.dataframe(df.head(10))
+        except Exception as e: st.error(f"❌ Ошибка: {str(e)}")
     
     st.markdown("---")
     
-    # === ГЕНЕРАТОР БИЗНЕС-ПЛАНОВ ===
+    # Генератор бизнес-планов
     st.markdown("""<div class="ai-card card-finance"><h3 style="margin: 0 0 10px 0; color: #E74C3C;">💼 Генератор бизнес-планов</h3>
-    <p style="margin: 0; color: #A89F91;">Создай бизнес-план с финансовой моделью и анализом рынка.</p></div>""", unsafe_allow_html=True)
-    
+    <p style="margin: 0; color: #A89F91;">Создай бизнес-план с финансовой моделью.</p></div>""", unsafe_allow_html=True)
     st.markdown("**Параметры бизнес-плана:**")
     col1, col2 = st.columns(2)
-    
     with col1:
-        business_name = st.text_input("Название бизнеса:", placeholder="Например: Кофейня в центре города")
-        business_type = st.selectbox("Тип бизнеса:", [
-            "Розничная торговля",
-            "Общественное питание",
-            "Услуги",
-            "Производство",
-            "IT/Технологии",
-            "Другое"
-        ])
+        business_name = st.text_input("Название бизнеса:", placeholder="Кофейня в центре")
+        business_type = st.selectbox("Тип бизнеса:", ["Розничная торговля", "Общепит", "Услуги", "Производство", "IT", "Другое"])
         initial_investment = st.number_input("Начальные инвестиции (руб):", min_value=0, value=1000000, step=100000)
-        monthly_revenue = st.number_input("Планируемая месячная выручка (руб):", min_value=0, value=500000, step=50000)
-    
+        monthly_revenue = st.number_input("Месячная выручка (руб):", min_value=0, value=500000, step=50000)
     with col2:
         monthly_costs = st.number_input("Месячные расходы (руб):", min_value=0, value=300000, step=50000)
-        growth_rate = st.number_input("Темп роста выручки (%/мес):", min_value=0, max_value=50, value=5, step=1)
-        planning_period = st.number_input("Горизонт планирования (мес):", min_value=6, max_value=60, value=24, step=6)
+        growth_rate = st.number_input("Рост (%/мес):", min_value=0, max_value=50, value=5, step=1)
+        planning_period = st.number_input("Горизонт (мес):", min_value=6, max_value=60, value=24, step=6)
         discount_rate = st.number_input("Ставка дисконтирования (%):", min_value=0, max_value=100, value=12, step=1)
-    
-    if st.button("📊 Создать бизнес-план с финансовой моделью", use_container_width=True):
+    if st.button(" Создать бизнес-план с финмоделью", use_container_width=True):
         if business_name.strip():
-            with st.spinner("Генерирую бизнес-план..."):
+            with st.spinner("Генерирую..."):
                 try:
-                    # Создаём финансовую модель
-                    years = planning_period // 12
-                    if years < 1:
-                        years = 1
-                    annual_revenue = monthly_revenue * 12
-                    annual_costs = monthly_costs * 12
-                    
-                    excel_path = create_financial_model(
-                        initial_investment, 
-                        annual_revenue, 
-                        annual_costs, 
-                        growth_rate * 12,  # Годовой рост
-                        discount_rate, 
-                        years
-                    )
-                    
+                    years = max(1, planning_period // 12)
+                    excel_path = create_financial_model(initial_investment, monthly_revenue*12, monthly_costs*12, growth_rate*12, discount_rate, years)
                     st.session_state['business_plan_data'] = {
-                        'name': business_name,
-                        'type': business_type,
-                        'investment': initial_investment,
-                        'monthly_revenue': monthly_revenue,
-                        'monthly_costs': monthly_costs,
-                        'growth_rate': growth_rate,
-                        'planning_period': planning_period,
-                        'discount_rate': discount_rate,
-                        'excel_path': excel_path
+                        'name': business_name, 'type': business_type, 'investment': initial_investment,
+                        'monthly_revenue': monthly_revenue, 'monthly_costs': monthly_costs,
+                        'growth_rate': growth_rate, 'planning_period': planning_period, 'discount_rate': discount_rate, 'excel_path': excel_path
                     }
-                    
-                    st.success("✅ Бизнес-план подготовлен! Теперь опиши задачу ниже.")
-                    st.info("💡 В задаче ниже ИИ автоматически использует данные бизнес-плана и финансовую модель.")
-                    
-                except Exception as e:
-                    st.error(f"❌ Ошибка: {str(e)}")
-        else:
-            st.warning("Введи название бизнеса")
+                    st.success("✅ Бизнес-план подготовлен! Опиши задачу ниже.")
+                    with open(excel_path, "rb") as f:
+                        st.download_button(label="📥 Скачать финмодель Excel", data=f,
+                            file_name=f"Финмодель_{business_name}_{datetime.now().strftime('%d%m%Y')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    os.remove(excel_path)
+                except Exception as e: st.error(f"❌ Ошибка: {str(e)}")
+        else: st.warning("Введи название бизнеса")
     
     st.markdown("---")
     
-    # === АКТУАЛЬНЫЕ ФИНАНСОВЫЕ ДАННЫЕ ===
-    st.markdown("""<div class="ai-card card-api"><h3 style="margin: 0 0 10px 0; color: #3498DB;">📈 Актуальные финансовые данные</h3>
-    <p style="margin: 0; color: #A89F91;">ЦБ РФ и Yahoo Finance для анализа рынка.</p></div>""", unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        use_cbr = st.checkbox("🇷🇺 ЦБ РФ (курсы, ставка)", value=True)
-    with col2:
-        use_yahoo = st.checkbox("🌍 Yahoo Finance", value=False)
-        yahoo_tickers = st.text_input("Тикеры конкурентов:", placeholder="AAPL, MSFT, ^GSPC", value="")
-    
-    if st.button(" Получить финансовые данные", use_container_width=True):
-        financial_parts = []
-        if use_cbr:
-            with st.spinner("ЦБ РФ..."):
-                cbr = get_cbr_data()
-                if 'error' not in cbr:
-                    text = f"## 🇷🇺 ЦБ РФ ({cbr.get('date', '')})\n**Ключевая ставка:** {cbr.get('key_rate', 'N/A')}%\n**Курсы:**\n"
-                    for code, d in cbr.get('currencies', {}).items():
-                        s = "📈" if d['change'] > 0 else "📉" if d['change'] < 0 else "➡️"
-                        text += f"- **{code}**: {d['value']:.2f} руб {s} ({d['change']:+.2f})\n"
-                    financial_parts.append(text)
-                    st.success(f"✅ ЦБ РФ: ставка {cbr.get('key_rate', 'N/A')}%")
-                else:
-                    st.error(cbr.get('error'))
-        if use_yahoo and yahoo_tickers.strip():
-            with st.spinner("Yahoo Finance..."):
-                tickers = [t.strip() for t in yahoo_tickers.split(',')]
-                yahoo_data = []
-                for ticker in tickers:
-                    data = get_yahoo_finance_data(ticker, '1mo')
-                    yahoo_data.append(data)
-                    if 'error' not in data:
-                        st.success(f"✅ {ticker}: {data.get('current_price', 0):.2f} {data.get('currency', '')}")
-                    else:
-                        st.error(f" {ticker}: {data.get('error')}")
-                st.session_state['yahoo_data'] = yahoo_data
-        
-        if financial_parts or 'yahoo_data' in st.session_state:
-            full_fin = "# 📊 АКТУАЛЬНЫЕ ФИНАНСОВЫЕ ДАННЫЕ\n\n"
-            for p in financial_parts:
-                full_fin += p + "\n"
-            if 'yahoo_data' in st.session_state:
-                full_fin += "## 🌍 Yahoo Finance (конкуренты/рынок)\n"
-                for d in st.session_state['yahoo_data']:
-                    if 'error' not in d:
-                        full_fin += f"### {d.get('ticker', '')} ({d.get('company_name', '')})\n"
-                        full_fin += f"- Цена: {d.get('current_price', 0):.2f} {d.get('currency', '')}\n"
-                        if d.get('price_change_percent'):
-                            full_fin += f"- Изменение за месяц: {d['price_change_percent']:+.2f}%\n"
-                        if d.get('market_cap'):
-                            full_fin += f"- Капитализация: {d['market_cap']:,.0f}\n"
-                        full_fin += "\n"
-            st.session_state['financial_api_data'] = full_fin
-            st.success("✅ Данные добавлены в контекст!")
-    
-    if st.button("📊 Создать финансовую модель", use_container_width=True):
-        with st.spinner("Генерирую..."):
-            try:
-                excel_path = create_financial_model(initial_investment, annual_revenue, annual_costs, growth_rate, discount_rate, years)
-                with open(excel_path, "rb") as f:
-                    st.download_button(label="📥 Скачать модель Excel", data=f,
-                        file_name=f"Финмодель_{datetime.now().strftime('%d%m%Y_%H%M')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                st.success("✅ Модель создана! Все формулы автоматические.")
-                os.remove(excel_path)
-            except Exception as e: st.error(f"Ошибка: {str(e)}")
-    
-    st.markdown("---")
-    
+    # Финансовые данные
     st.markdown("""<div class="ai-card card-api"><h3 style="margin: 0 0 10px 0; color: #3498DB;">📈 Актуальные финансовые данные</h3>
     <p style="margin: 0; color: #A89F91;">ЦБ РФ и Yahoo Finance.</p></div>""", unsafe_allow_html=True)
-    
     col1, col2 = st.columns(2)
-    with col1:
-        use_cbr = st.checkbox("🇷🇺 ЦБ РФ (курсы, ставка)", value=True)
+    with col1: use_cbr = st.checkbox("🇷🇺 ЦБ РФ", value=True)
     with col2:
-        use_yahoo = st.checkbox(" Yahoo Finance", value=False)
-        yahoo_tickers = st.text_input("Тикеры:", placeholder="AAPL, MSFT, ^GSPC", value="AAPL")
-    
+        use_yahoo = st.checkbox("🌍 Yahoo Finance", value=False)
+        yahoo_tickers = st.text_input("Тикеры конкурентов:", placeholder="SBUX, MCD", value="")
     if st.button(" Получить данные", use_container_width=True):
         financial_parts = []
         if use_cbr:
@@ -1247,7 +984,7 @@ elif branch == 'business':
                     for code, d in cbr.get('currencies', {}).items():
                         s = "📈" if d['change'] > 0 else "📉" if d['change'] < 0 else "➡️"
                         text += f"- **{code}**: {d['value']:.2f} руб {s} ({d['change']:+.2f})\n"
-                    financial_parts.append(text); st.success(f"✅ ЦБ РФ: ставка {cbr.get('key_rate', 'N/A')}%")
+                    financial_parts.append(text); st.success(f"✅ Ставка: {cbr.get('key_rate', 'N/A')}%")
                 else: st.error(cbr.get('error'))
         if use_yahoo and yahoo_tickers.strip():
             with st.spinner("Yahoo Finance..."):
@@ -1255,47 +992,58 @@ elif branch == 'business':
                 yahoo_data = []
                 for ticker in tickers:
                     data = get_yahoo_finance_data(ticker, '1mo'); yahoo_data.append(data)
-                    if 'error' not in data:
-                        st.success(f"✅ {ticker}: {data.get('current_price', 0):.2f} {data.get('currency', '')}")
-                    else: st.error(f" {ticker}: {data.get('error')}")
+                    if 'error' not in data: st.success(f"✅ {ticker}: {data.get('current_price', 0):.2f}")
+                    else: st.error(f"❌ {ticker}: {data.get('error')}")
                 st.session_state['yahoo_data'] = yahoo_data
-        
         if financial_parts or 'yahoo_data' in st.session_state:
             full_fin = "# 📊 АКТУАЛЬНЫЕ ФИНАНСОВЫЕ ДАННЫЕ\n\n"
             for p in financial_parts: full_fin += p + "\n"
             if 'yahoo_data' in st.session_state:
-                full_fin += "## 🌍 Yahoo Finance\n"
+                full_fin += "##  Yahoo Finance\n"
                 for d in st.session_state['yahoo_data']:
                     if 'error' not in d:
                         full_fin += f"### {d.get('ticker', '')} ({d.get('company_name', '')})\n"
                         full_fin += f"- Цена: {d.get('current_price', 0):.2f} {d.get('currency', '')}\n"
                         if d.get('price_change_percent'): full_fin += f"- Изменение: {d['price_change_percent']:+.2f}%\n"
                         full_fin += "\n"
-            st.session_state['financial_api_data'] = full_fin
-            st.success("✅ Данные добавлены в контекст!")
+            st.session_state['financial_api_data'] = full_fin; st.success("✅ Данные добавлены!")
+    
+    # Быстрый анализ выписки
+    if 'bank_statement_df' in st.session_state:
+        st.markdown("---")
+        st.markdown("""<div class="ai-card" style="border-left: 5px solid #3498DB;"><h3 style="margin: 0 0 10px 0; color: #3498DB;">🔍 Быстрый анализ выписки</h3></div>""", unsafe_allow_html=True)
+        df = st.session_state['bank_statement_df']
+        amount_col = st.session_state.get('bank_amount_col')
+        if amount_col:
+            col1, col2, col3, col4 = st.columns(4)
+            with col1: st.metric("Общая сумма", f"{df[amount_col].sum():,.0f} руб")
+            with col2: st.metric("Средняя операция", f"{df[amount_col].mean():,.0f} руб")
+            with col3: st.metric("Максимальная", f"{df[amount_col].max():,.0f} руб")
+            with col4: st.metric("Всего операций", f"{len(df)}")
+            st.markdown("**🔝 Топ-10 крупнейших операций:**")
+            date_col = st.session_state.get('bank_date_col', df.columns[0])
+            cols_to_show = [c for c in [date_col, amount_col] if c in df.columns]
+            st.dataframe(df.nlargest(10, amount_col)[cols_to_show])
 
-# === ОБЩИЕ ЭЛЕМЕНТЫ ДЛЯ ВСЕХ ВЕТВЕЙ ===
+# === ОБЩИЕ ЭЛЕМЕНТЫ ===
 st.markdown("---")
-
 st.markdown("""<div class="ai-card card-excel"><h3 style="margin: 0 0 10px 0; color: #27AE60;">📎 Загрузи материалы</h3>
-<p style="margin: 0; color: #A89F91;">PDF, DOCX, TXT, Excel, фото (JPG, PNG)</p></div>""", unsafe_allow_html=True)
-
+<p style="margin: 0; color: #A89F91;">PDF, DOCX, TXT, Excel, фото</p></div>""", unsafe_allow_html=True)
 uploaded_file = st.file_uploader("Выбери файл:", type=['pdf', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'xlsx', 'xls'])
-file_text = ""; file_name = ""; file_type = ""
-excel_analysis = None
+file_text = ""; file_name = ""; file_type = ""; excel_analysis = None
 
 if uploaded_file is not None:
     try:
         file_name = uploaded_file.name; fn = file_name.lower()
         if fn.endswith(('.jpg', '.jpeg', '.png')):
-            with st.spinner("️ Анализирую изображение..."): file_text = analyze_image(uploaded_file)
+            with st.spinner("Анализирую изображение..."): file_text = analyze_image(uploaded_file)
             st.success(f"✅ Изображение: {file_name}"); file_type = "image"
         elif fn.endswith(('.xlsx', '.xls')):
-            with st.spinner("📊 Анализирую Excel..."):
+            with st.spinner("Анализирую Excel..."):
                 file_text, num = extract_excel_data(uploaded_file)
                 excel_analysis = analyze_excel_structure(uploaded_file)
                 st.success(f"✅ Excel: {file_name} ({num} листов)")
-                if excel_analysis and excel_analysis['has_financial_data']: st.success(" Финансовые данные обнаружены")
+                if excel_analysis and excel_analysis['has_financial_data']: st.success("💰 Финансовые данные")
             file_type = "excel"
         else:
             file_text = extract_text(uploaded_file)
@@ -1304,12 +1052,11 @@ if uploaded_file is not None:
     except Exception as e: st.error(f"❌ Ошибка: {e}")
 
 st.markdown("---")
-
 task = st.text_area("Опиши задачу:", height=150, 
     placeholder={
-        'science': "Например: 'Напиши научную статью о влиянии ИИ на гражданское право'",
-        'legal': "Например: 'Составь договор купли-продажи автомобиля между физическими лицами'",
-        'business': "Например: 'Проанализируй инвестиционную привлекательность проекта с учётом текущей ключевой ставки'"
+        'science': "Например: 'Напиши научную статью об ИИ в праве'",
+        'legal': "Например: 'Составь договор купли-продажи автомобиля'",
+        'business': "Например: 'Проанализируй выписку и найди причины убытков'"
     }.get(branch, ""))
 
 col1, col2, col3 = st.columns([1, 2, 1])
@@ -1319,10 +1066,8 @@ with col2:
         else:
             try:
                 context_parts = []
-                
                 if 'financial_api_data' in st.session_state and st.session_state['financial_api_data']:
                     context_parts.append(st.session_state['financial_api_data'])
-                
                 if branch == 'science' and use_library and 'library_books' in st.session_state:
                     with st.spinner("Ищу книги..."):
                         relevant = search_relevant_books(task, st.session_state['library_books'], top_n=3)
@@ -1332,52 +1077,41 @@ with col2:
                                 with st.status(f"Загружаю: {book['title'][:50]}..."):
                                     bt += f"## [К{i}] {book['title']}\n**Автор:** {book['author']} | **Год:** {book['year']}\n\n{load_book_content(book['path'])[:10000]}\n\n---\n\n"
                             context_parts.append(bt); st.success(f"✅ {len(relevant)} книг")
-                
                 if branch == 'legal' and 'external_ai_opinion' in dir() and external_ai_opinion.strip():
-                    context_parts.append(f"# ️ МНЕНИЕ ВНЕШНЕГО ИИ\n\n{external_ai_opinion}\n\n")
-                
+                    context_parts.append(f"# ⚖️ МНЕНИЕ ВНЕШНЕГО ИИ\n\n{external_ai_opinion}\n\n")
                 if file_type == "excel" and file_text:
                     ec = "# 📊 ДАННЫЕ EXCEL\n\n"
                     if excel_analysis and excel_analysis['has_financial_data']:
-                        ec += "⚠️ Финансовые данные. Выяви тренды, рассчитай метрики, найди аномалии.\n\n"
+                        ec += "⚠️ Финансовые данные. Выяви тренды, метрики, аномалии.\n\n"
                     ec += file_text + "\n\n"; context_parts.append(ec)
-                
                 if 'deep_analysis_articles' in st.session_state and st.session_state['deep_analysis_articles']:
-                    at = "# 📚 СТАТЬИ (ПОЛНЫЕ ТЕКСТЫ)\nИНСТРУКЦИЯ: Цитируй как [1], [2]\n\n"
+                    at = "# 📚 СТАТЬИ\nИНСТРУКЦИЯ: Цитируй как [1], [2]\n\n"
                     for i, a in enumerate(st.session_state['deep_analysis_articles'], 1):
                         at += f"## [{i}] {a['title']}\n**Авторы:** {a['authors']} | **Год:** {a['year']}\n\n{a.get('full_text', '')[:10000]}\n\n---\n\n"
                     context_parts.append(at)
-                
                 if file_type in ['document', 'image'] and file_text:
                     context_parts.append(f"# 📄 ФАЙЛ\n\n{file_text}\n\n")
-                
                 full_context = "\n".join(context_parts) if context_parts else ""
-                
                 instructions = """# ⚠️ ИНСТРУКЦИИ:
 1. Используй ТОЛЬКО информацию из источников.
 2. НЕ выдумывай факты.
 3. Цитируй источники.
-4. Соблюдай стиль выбранной ветви.
-
+4. Соблюдай стиль ветви.
 """
                 full_context_with_instructions = full_context + instructions if full_context else instructions
-                
-                chatgpt_prompt, claude_prompt, qwen_prompt = get_branch_prompts(
-                    branch, task, full_context_with_instructions)
+                chatgpt_prompt, claude_prompt, qwen_prompt = get_branch_prompts(branch, task, full_context_with_instructions)
                 
                 with st.spinner("📝 ChatGPT пишет..."):
                     draft = ask(MODEL_CHATGPT, chatgpt_prompt)
-                st.markdown(f"""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️ Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
+                st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️⃣ Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
                 st.write(draft)
-                
                 with st.spinner("🔍 Claude проверяет..."):
                     critique = ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
-                st.markdown(f"""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️⃣ Критика от Claude</h3></div>""", unsafe_allow_html=True)
+                st.markdown("""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️⃣ Критика от Claude</h3></div>""", unsafe_allow_html=True)
                 st.write(critique)
-                
-                with st.spinner("🎯 Qwen готовит финал..."):
+                with st.spinner(" Qwen готовит финал..."):
                     final = ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
-                st.markdown(f"""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️⃣ ✅ Финал от Qwen</h3></div>""", unsafe_allow_html=True)
+                st.markdown("""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️ ✅ Финал от Qwen</h3></div>""", unsafe_allow_html=True)
                 st.write(final)
                 
                 doc = docx.Document()
@@ -1387,11 +1121,10 @@ with col2:
                 doc.add_heading('1. Черновик', level=2); doc.add_paragraph(draft)
                 doc.add_heading('2. Критика', level=2); doc.add_paragraph(critique)
                 doc.add_heading('3. Финал', level=2); doc.add_paragraph(final)
-                
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
                     doc.save(tmp.name); tmp_path = tmp.name
                 with open(tmp_path, "rb") as f:
-                    st.download_button(label=" Скачать в Word", data=f,
+                    st.download_button(label="📥 Скачать в Word", data=f,
                         file_name=f"Результат_{branch}_{datetime.now().strftime('%d%m%Y_%H%M')}.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
                 os.remove(tmp_path)
@@ -1403,8 +1136,5 @@ with col2:
                     "task": task, "file": file_name,
                     "draft": draft, "critique": critique, "final": final})
                 st.sidebar.success("💾 Сохранено!")
-                
-                # Автоматически предлагаем начать новую беседу
                 st.session_state['show_new_chat'] = True
-                
             except Exception as e: st.error(f"❌ Ошибка: {str(e)}")
