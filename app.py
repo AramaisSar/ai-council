@@ -239,7 +239,7 @@ st.markdown("""
     }
     
     .main-header h1 {
-        font-size: 3.5rem !important;
+        font-size: 2.2rem !important;
         margin-bottom: 20px !important;
         background: linear-gradient(135deg, #00D9FF 0%, #B388FF 100%);
         -webkit-background-clip: text;
