@@ -33,72 +33,261 @@ MAX_BOOK_PAGES = 30
 MAX_EXCEL_ROWS = 100
 # =============================================
 
-# --- КАСТОМНЫЙ CSS ---
+# --- КАСТОМНЫЙ CSS: ХАЙТЕК СТИЛЬ ---
 st.markdown("""
 <style>
-    .stApp { background-color: #FAF8F5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    .stApp p, .stApp div, .stApp label { color: #4A403A !important; }
-    h1, h2, h3 { color: #8B5E3C !important; font-weight: 600 !important; }
-    section[data-testid="stSidebar"] { background-color: #FDFBF9 !important; border-right: 1px solid #F0EBE3 !important; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    
+    .stApp {
+        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+        font-family: 'Inter', 'Segoe UI', sans-serif !important;
+    }
+    
+    .stApp p, .stApp div, .stApp label, .stApp h1, .stApp h2, .stApp h3 {
+        color: #E0E0E0 !important;
+    }
+    
+    h1, h2, h3 {
+        color: #00D9FF !important;
+        font-weight: 700 !important;
+        text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+    }
+    
+    section[data-testid="stSidebar"] {
+        background: rgba(15, 12, 41, 0.95) !important;
+        border-right: 2px solid rgba(0, 217, 255, 0.3) !important;
+        backdrop-filter: blur(10px);
+    }
     
     .stButton>button {
-        background-color: #D4A373 !important; color: #FFFFFF !important; border: none !important;
-        border-radius: 12px !important; padding: 10px 20px !important; font-weight: 600 !important;
-        transition: all 0.3s ease !important; box-shadow: 0 2px 10px rgba(212, 163, 115, 0.2) !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: #FFFFFF !important;
+        border: 2px solid rgba(0, 217, 255, 0.5) !important;
+        border-radius: 12px !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+        font-size: 16px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
-    .stButton>button:hover { background-color: #BC8A5F !important; transform: translateY(-1px) !important; }
+    
+    .stButton>button:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6) !important;
+        border-color: #00D9FF !important;
+    }
     
     .ai-card {
-        background: #FFFFFF; border-radius: 16px; padding: 24px; margin: 20px 0;
-        box-shadow: 0 4px 24px rgba(139, 94, 60, 0.06); border: 1px solid #F0EBE3;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-radius: 20px !important;
+        padding: 28px !important;
+        margin: 20px 0 !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(0, 217, 255, 0.2) !important;
+        transition: all 0.3s ease !important;
     }
-    .card-chatgpt { border-left: 5px solid #E9C46A; }
-    .card-claude { border-left: 5px solid #E07A5F; }
-    .card-qwen { border-left: 5px solid #8B5E3C; background-color: #FAF6F1; }
-    .card-external { border-left: 5px solid #6B9080; background-color: #F4F9F7; }
-    .card-search { border-left: 5px solid #5B8DB8; background-color: #F0F7FB; }
-    .card-library { border-left: 5px solid #9B59B6; background-color: #F8F0FB; }
-    .card-excel { border-left: 5px solid #27AE60; background-color: #F0FBF4; }
-    .card-finance { border-left: 5px solid #E74C3C; background-color: #FDF0EF; }
-    .card-api { border-left: 5px solid #3498DB; background-color: #EBF5FB; }
+    
+    .ai-card:hover {
+        border-color: rgba(0, 217, 255, 0.5) !important;
+        box-shadow: 0 12px 40px rgba(0, 217, 255, 0.2) !important;
+    }
+    
+    .card-chatgpt { border-left: 5px solid #FFD700 !important; }
+    .card-claude { border-left: 5px solid #FF6B6B !important; }
+    .card-qwen { border-left: 5px solid #00D9FF !important; background: rgba(0, 217, 255, 0.05) !important; }
+    .card-external { border-left: 5px solid #00FF88 !important; background: rgba(0, 255, 136, 0.05) !important; }
+    .card-search { border-left: 5px solid #00D9FF !important; background: rgba(0, 217, 255, 0.05) !important; }
+    .card-library { border-left: 5px solid #B388FF !important; background: rgba(179, 136, 255, 0.05) !important; }
+    .card-excel { border-left: 5px solid #00FF88 !important; background: rgba(0, 255, 136, 0.05) !important; }
+    .card-finance { border-left: 5px solid #FF6B6B !important; background: rgba(255, 107, 107, 0.05) !important; }
+    .card-api { border-left: 5px solid #00D9FF !important; background: rgba(0, 217, 255, 0.05) !important; }
 
-    .stTextArea textarea { border-radius: 12px !important; border: 1px solid #E0D8CC !important; background: #FFFFFF !important; color: #4A403A !important; padding: 15px !important; }
+    .stTextArea textarea {
+        border-radius: 12px !important;
+        border: 2px solid rgba(0, 217, 255, 0.3) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        color: #E0E0E0 !important;
+        padding: 15px !important;
+        font-size: 16px !important;
+    }
     
-    .stSuccess { background-color: #F1F8E9 !important; color: #558B2F !important; border-radius: 10px !important; border: 1px solid #DCEDC8 !important; }
-    .stError { background-color: #FBE9E7 !important; color: #D84315 !important; border-radius: 10px !important; border: 1px solid #FFCCBC !important; }
-    .stWarning { background-color: #FFF8E1 !important; color: #F57F17 !important; border-radius: 10px !important; border: 1px solid #FFE082 !important; }
-    .stInfo { background-color: #E3F2FD !important; color: #1565C0 !important; border-radius: 10px !important; border: 1px solid #BBDEFB !important; }
+    .stTextArea textarea:focus {
+        border-color: #00D9FF !important;
+        box-shadow: 0 0 15px rgba(0, 217, 255, 0.3) !important;
+    }
     
-    hr { border: none !important; height: 1px !important; background: #E0D8CC !important; margin: 30px 0 !important; }
+    .stSuccess {
+        background: rgba(0, 255, 136, 0.15) !important;
+        color: #00FF88 !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(0, 255, 136, 0.3) !important;
+    }
+    
+    .stError {
+        background: rgba(255, 107, 107, 0.15) !important;
+        color: #FF6B6B !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(255, 107, 107, 0.3) !important;
+    }
+    
+    .stWarning {
+        background: rgba(255, 215, 0, 0.15) !important;
+        color: #FFD700 !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(255, 215, 0, 0.3) !important;
+    }
+    
+    .stInfo {
+        background: rgba(0, 217, 255, 0.15) !important;
+        color: #00D9FF !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(0, 217, 255, 0.3) !important;
+    }
+    
+    hr {
+        border: none !important;
+        height: 2px !important;
+        background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.5), transparent) !important;
+        margin: 30px 0 !important;
+    }
     
     .article-item, .book-item {
-        background: #FFFFFF; border-radius: 12px; padding: 16px; margin: 12px 0;
-        border: 1px solid #E0D8CC; border-left: 4px solid #5B8DB8;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-radius: 16px !important;
+        padding: 20px !important;
+        margin: 15px 0 !important;
+        border: 1px solid rgba(0, 217, 255, 0.2) !important;
+        border-left: 4px solid #00D9FF !important;
+        backdrop-filter: blur(5px) !important;
     }
-    .book-item { border-left-color: #9B59B6; }
+    
+    .book-item { border-left-color: #B388FF !important; }
     
     .branch-card {
-        background: #FFFFFF; border-radius: 20px; padding: 30px; margin: 15px 0;
-        box-shadow: 0 6px 30px rgba(0,0,0,0.08); border: 2px solid #F0EBE3;
-        cursor: pointer; transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.08) !important;
+        border-radius: 24px !important;
+        padding: 35px !important;
+        margin: 20px 0 !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: blur(15px) !important;
+        border: 2px solid rgba(0, 217, 255, 0.3) !important;
+        cursor: pointer !important;
+        transition: all 0.4s ease !important;
+        position: relative;
+        overflow: hidden;
     }
+    
+    .branch-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.1), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .branch-card:hover::before {
+        left: 100%;
+    }
+    
     .branch-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+        transform: translateY(-5px) scale(1.02) !important;
+        box-shadow: 0 15px 50px rgba(0, 217, 255, 0.3) !important;
+        border-color: #00D9FF !important;
     }
-    .branch-science { border-left: 8px solid #9B59B6; }
-    .branch-legal { border-left: 8px solid #2C3E50; }
-    .branch-business { border-left: 8px solid #27AE60; }
+    
+    .branch-science { 
+        border-left: 8px solid #B388FF !important;
+        background: linear-gradient(135deg, rgba(179, 136, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+    }
+    
+    .branch-legal { 
+        border-left: 8px solid #00D9FF !important;
+        background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+    }
+    
+    .branch-business { 
+        border-left: 8px solid #00FF88 !important;
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+    }
+    
+    .branch-science h3 { color: #B388FF !important; text-shadow: 0 0 20px rgba(179, 136, 255, 0.5) !important; }
+    .branch-legal h3 { color: #00D9FF !important; text-shadow: 0 0 20px rgba(0, 217, 255, 0.5) !important; }
+    .branch-business h3 { color: #00FF88 !important; text-shadow: 0 0 20px rgba(0, 255, 136, 0.5) !important; }
     
     .history-btn-date {
         font-size: 11px !important;
-        color: #A89F91 !important;
+        color: #888 !important;
         font-weight: 400 !important;
+    }
+    
+    /* Стили для фонового изображения на главной */
+    .main-header {
+        background: linear-gradient(rgba(15, 12, 41, 0.7), rgba(48, 43, 99, 0.7)), 
+                    url('https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1920&q=80') center/cover;
+        border-radius: 24px;
+        padding: 60px 40px;
+        margin: 20px 0;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        border: 2px solid rgba(0, 217, 255, 0.3);
+    }
+    
+    .main-header h1 {
+        font-size: 3.5rem !important;
+        margin-bottom: 20px !important;
+        background: linear-gradient(135deg, #00D9FF 0%, #B388FF 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .main-header p {
+        font-size: 1.3rem !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* Неоновые эффекты для кнопок */
+    .neon-button {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .neon-button::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(0, 217, 255, 0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s ease, height 0.6s ease;
+    }
+    
+    .neon-button:hover::after {
+        width: 300px;
+        height: 300px;
+    }
+    
+    /* Анимация для карточек */
+    @keyframes glow {
+        0%, 100% { box-shadow: 0 0 20px rgba(0, 217, 255, 0.3); }
+        50% { box-shadow: 0 0 40px rgba(0, 217, 255, 0.6); }
+    }
+    
+    .glow-effect {
+        animation: glow 2s ease-in-out infinite;
     }
 </style>
 """, unsafe_allow_html=True)
-
-st.set_page_config(page_title="Совет ИИ", page_icon="🤖", layout="wide")
 
 # --- ФУНКЦИИ ДЛЯ ФИНАНСОВЫХ API ---
 def get_cbr_data():
