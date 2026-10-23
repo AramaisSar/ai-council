@@ -13,6 +13,9 @@ from io import BytesIO
 from pathlib import Path
 import re
 import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.chart import BarChart, LineChart, Reference
+from openpyxl.utils import get_column_letter
 import pandas as pd
 
 # ================= НАСТРОЙКИ =================
@@ -56,6 +59,7 @@ st.markdown("""
     .card-search { border-left: 5px solid #5B8DB8; background-color: #F0F7FB; }
     .card-library { border-left: 5px solid #9B59B6; background-color: #F8F0FB; }
     .card-excel { border-left: 5px solid #27AE60; background-color: #F0FBF4; }
+    .card-finance { border-left: 5px solid #E74C3C; background-color: #FDF0EF; }
 
     .stTextArea textarea { border-radius: 12px !important; border: 1px solid #E0D8CC !important; background: #FFFFFF !important; color: #4A403A !important; padding: 15px !important; }
     
@@ -74,7 +78,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.set_page_config(page_title="Совет ИИ", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="Совет ИИ", page_icon="", layout="wide")
 
 st.markdown("""
 <div style="text-align: center; margin-bottom: 40px; margin-top: 20px;">
@@ -84,6 +88,231 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
+# --- ФУНКЦИИ ДЛЯ ФИНАНСОВЫХ МОДЕЛЕЙ ---
+def create_financial_model(initial_investment, annual_revenue, annual_costs, growth_rate, discount_rate, years=5):
+    """Создаёт профессиональную финансовую модель в Excel"""
+    
+    wb = openpyxl.Workbook()
+    
+    # === ЛИСТ 1: ИСХОДНЫЕ ДАННЫЕ ===
+    ws_inputs = wb.active
+    ws_inputs.title = "Исходные данные"
+    
+    # Заголовок
+    ws_inputs['A1'] = "ИСХОДНЫЕ ДАННЫЕ ДЛЯ ФИНАНСОВОЙ МОДЕЛИ"
+    ws_inputs['A1'].font = Font(size=14, bold=True, color="FFFFFF")
+    ws_inputs['A1'].fill = PatternFill(start_color="2C3E50", end_color="2C3E50", fill_type="solid")
+    ws_inputs['A1'].alignment = Alignment(horizontal="center")
+    ws_inputs.merge_cells('A1:C1')
+    
+    # Параметры
+    params = [
+        ("Начальные инвестиции (руб):", initial_investment),
+        ("Годовая выручка год 1 (руб):", annual_revenue),
+        ("Годовые операционные расходы (руб):", annual_costs),
+        ("Темп роста выручки (% в год):", growth_rate),
+        ("Ставка дисконтирования (%):", discount_rate),
+        ("Горизонт планирования (лет):", years)
+    ]
+    
+    row = 3
+    for label, value in params:
+        ws_inputs[f'A{row}'] = label
+        ws_inputs[f'A{row}'].font = Font(bold=True)
+        ws_inputs[f'B{row}'] = value
+        ws_inputs[f'B{row}'].number_format = '#,##0.00' if isinstance(value, (int, float)) else '0'
+        row += 1
+    
+    # === ЛИСТ 2: ДЕНЕЖНЫЕ ПОТОКИ ===
+    ws_cashflow = wb.create_sheet("Денежные потоки")
+    
+    # Заголовок
+    ws_cashflow['A1'] = "ПРОГНОЗ ДЕНЕЖНЫХ ПОТОКОВ"
+    ws_cashflow['A1'].font = Font(size=14, bold=True, color="FFFFFF")
+    ws_cashflow['A1'].fill = PatternFill(start_color="27AE60", end_color="27AE60", fill_type="solid")
+    ws_cashflow['A1'].alignment = Alignment(horizontal="center")
+    ws_cashflow.merge_cells('A1:G1')
+    
+    # Заголовки столбцов
+    headers = ["Показатель", "Год 0", "Год 1", "Год 2", "Год 3", "Год 4", "Год 5"]
+    for col, header in enumerate(headers, 1):
+        cell = ws_cashflow.cell(row=3, column=col)
+        cell.value = header
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(start_color="34495E", end_color="34495E", fill_type="solid")
+        cell.alignment = Alignment(horizontal="center")
+    
+    # Строки с данными и формулами
+    rows_data = [
+        ("Начальные инвестиции", -initial_investment, None, None, None, None, None),
+        ("Выручка", None, annual_revenue, None, None, None, None),
+        ("Операционные расходы", None, annual_costs, None, None, None, None),
+        ("EBITDA (прибыль до налогов)", None, None, None, None, None, None),
+        ("Налог на прибыль (20%)", None, None, None, None, None, None),
+        ("Чистый денежный поток", None, None, None, None, None, None),
+        ("Коэффициент дисконтирования", None, None, None, None, None, None),
+        ("Дисконтированный денежный поток", None, None, None, None, None, None),
+        ("Накопленный дисконтированный поток (NPV)", None, None, None, None, None, None)
+    ]
+    
+    for row_idx, (label, val0, val1, val2, val3, val4, val5) in enumerate(rows_data, 4):
+        ws_cashflow.cell(row=row_idx, column=1).value = label
+        ws_cashflow.cell(row=row_idx, column=1).font = Font(bold=True)
+        
+        if val0 is not None:
+            ws_cashflow.cell(row=row_idx, column=2).value = val0
+        if val1 is not None:
+            ws_cashflow.cell(row=row_idx, column=3).value = val1
+        
+        # Формулы для годов 2-5 (рост выручки и расходов)
+        if row_idx == 2:  # Выручка
+            for year in range(4, 8):
+                prev_col = get_column_letter(year - 1)
+                ws_cashflow.cell(row=row_idx, column=year).value = f"={prev_col}{row_idx}*(1+B5/100)"
+        elif row_idx == 3:  # Расходы
+            for year in range(4, 8):
+                prev_col = get_column_letter(year - 1)
+                ws_cashflow.cell(row=row_idx, column=year).value = f"={prev_col}{row_idx}*(1+B4/100)"
+        
+        # EBITDA = Выручка - Расходы
+        if row_idx == 4:
+            for year in range(2, 8):
+                col_letter = get_column_letter(year)
+                ws_cashflow.cell(row=row_idx, column=year).value = f"={col_letter}2-{col_letter}3"
+        
+        # Налог 20%
+        if row_idx == 5:
+            for year in range(2, 8):
+                col_letter = get_column_letter(year)
+                ws_cashflow.cell(row=row_idx, column=year).value = f"={col_letter}4*0.2"
+        
+        # Чистый денежный поток
+        if row_idx == 6:
+            ws_cashflow.cell(row=row_idx, column=2).value = f"=B2"  # Год 0 = инвестиции
+            for year in range(3, 8):
+                col_letter = get_column_letter(year)
+                ws_cashflow.cell(row=row_idx, column=year).value = f"={col_letter}4-{col_letter}5"
+        
+        # Коэффициент дисконтирования
+        if row_idx == 7:
+            ws_cashflow.cell(row=row_idx, column=2).value = 1
+            for year in range(3, 8):
+                year_num = year - 2
+                ws_cashflow.cell(row=row_idx, column=year).value = f"=1/(1+B6/100)^{year_num}"
+        
+        # Дисконтированный денежный поток
+        if row_idx == 8:
+            for year in range(2, 8):
+                col_letter = get_column_letter(year)
+                ws_cashflow.cell(row=row_idx, column=year).value = f"={col_letter}6*{col_letter}7"
+        
+        # Накопленный NPV
+        if row_idx == 9:
+            ws_cashflow.cell(row=row_idx, column=2).value = f"=B8"
+            for year in range(3, 8):
+                col_letter = get_column_letter(year)
+                prev_col = get_column_letter(year - 1)
+                ws_cashflow.cell(row=row_idx, column=year).value = f"={prev_col}9+{col_letter}8"
+    
+    # Форматирование чисел
+    for row in range(4, 13):
+        for col in range(2, 8):
+            cell = ws_cashflow.cell(row=row, column=col)
+            cell.number_format = '#,##0.00'
+    
+    # === ЛИСТ 3: КЛЮЧЕВЫЕ ПОКАЗАТЕЛИ ===
+    ws_metrics = wb.create_sheet("Ключевые показатели")
+    
+    ws_metrics['A1'] = "КЛЮЧЕВЫЕ ФИНАНСОВЫЕ ПОКАЗАТЕЛИ"
+    ws_metrics['A1'].font = Font(size=14, bold=True, color="FFFFFF")
+    ws_metrics['A1'].fill = PatternFill(start_color="E74C3C", end_color="E74C3C", fill_type="solid")
+    ws_metrics['A1'].alignment = Alignment(horizontal="center")
+    ws_metrics.merge_cells('A1:C1')
+    
+    metrics = [
+        ("NPV (Чистая приведённая стоимость)", f"='Денежные потоки'!F9", '#,##0.00'),
+        ("IRR (Внутренняя норма доходности)", f'=IRR(\'Денежные потоки\'!B6:G6)', '0.00%'),
+        ("ROI (Возврат на инвестиции)", f"=('Денежные потоки'!F6-B2)/B2*100", '0.00'),
+        ("Срок окупаемости (лет)", f'=MATCH(TRUE,\'Денежные потоки\'!B9:G9>0,0)-1', '0.0'),
+        ("Индекс рентабельности (PI)", f"='Денежные потоки'!F9/ABS(B2)", '0.00'),
+        ("Точка безубыточности (выручка)", f"=B3/(1-B4/B2)", '#,##0.00')
+    ]
+    
+    row = 3
+    for label, formula, format_code in metrics:
+        ws_metrics[f'A{row}'] = label
+        ws_metrics[f'A{row}'].font = Font(bold=True)
+        ws_metrics[f'B{row}'] = formula
+        ws_metrics[f'B{row}'].number_format = format_code
+        row += 1
+    
+    # === ЛИСТ 4: РЕЗЮМЕ ===
+    ws_summary = wb.create_sheet("Резюме")
+    
+    ws_summary['A1'] = "РЕЗЮМЕ ИНВЕСТИЦИОННОГО ПРОЕКТА"
+    ws_summary['A1'].font = Font(size=14, bold=True, color="FFFFFF")
+    ws_summary['A1'].fill = PatternFill(start_color="8E44AD", end_color="8E44AD", fill_type="solid")
+    ws_summary['A1'].alignment = Alignment(horizontal="center")
+    ws_summary.merge_cells('A1:B1')
+    
+    summary_data = [
+        ("Дата расчёта:", datetime.now().strftime("%d.%m.%Y %H:%M")),
+        ("Начальные инвестиции:", initial_investment),
+        ("Годовая выручка (год 1):", annual_revenue),
+        ("Годовые расходы:", annual_costs),
+        ("Темп роста:", f"{growth_rate}%"),
+        ("Ставка дисконтирования:", f"{discount_rate}%"),
+        ("", ""),
+        ("РЕЗУЛЬТАТЫ АНАЛИЗА:", ""),
+        ("NPV:", f"='Ключевые показатели'!B3"),
+        ("IRR:", f"='Ключевые показатели'!B4"),
+        ("ROI:", f"='Ключевые показатели'!B5"),
+        ("Срок окупаемости:", f"='Ключевые показатели'!B6"),
+        ("", ""),
+        ("ВЫВОД:", ""),
+        ("Рекомендация:", f'=IF(B9>0,"ПРОЕКТ ЭФФЕКТИВЕН - РЕКОМЕНДУЕТСЯ К РЕАЛИЗАЦИИ","ПРОЕКТ НЕЭФФЕКТИВЕН - ТРЕБУЕТСЯ КОРРЕКТИРОВКА")')
+    ]
+    
+    row = 3
+    for label, value in summary_data:
+        ws_summary[f'A{row}'] = label
+        ws_summary[f'A{row}'].font = Font(bold=True) if label else Font()
+        ws_summary[f'B{row}'] = value
+        if isinstance(value, (int, float)):
+            ws_summary[f'B{row}'].number_format = '#,##0.00'
+        row += 1
+    
+    # === ГРАФИКИ ===
+    # График денежных потоков
+    chart1 = BarChart()
+    chart1.type = "col"
+    chart1.title = "Денежные потоки по годам"
+    chart1.y_axis.title = "Рубли"
+    chart1.x_axis.title = "Годы"
+    
+    data = Reference(ws_cashflow, min_col=2, min_row=6, max_col=7, max_row=6)
+    cats = Reference(ws_cashflow, min_col=2, min_row=3, max_col=7, max_row=3)
+    chart1.add_data(data, titles_from_data=False)
+    chart1.set_categories(cats)
+    chart1.shape = 4
+    ws_cashflow.add_chart(chart1, "A12")
+    
+    # График NPV
+    chart2 = LineChart()
+    chart2.title = "Накопленный NPV по годам"
+    chart2.y_axis.title = "Рубли"
+    chart2.x_axis.title = "Годы"
+    
+    data = Reference(ws_cashflow, min_col=2, min_row=9, max_col=7, max_row=9)
+    chart2.add_data(data, titles_from_data=False)
+    chart2.set_categories(cats)
+    ws_cashflow.add_chart(chart2, "A25")
+    
+    # Сохраняем файл
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+        wb.save(tmp.name)
+        return tmp.name
 
 # --- ФУНКЦИИ ДЛЯ НАУЧНОГО ПОИСКА ---
 def search_openalex(query, max_results=15):
@@ -150,7 +379,6 @@ def search_cyberleninka(query, max_results=15):
         return [{'error': f'Ошибка поиска в КиберЛенинке: {str(e)}'}]
 
 def search_semantic_scholar(query, max_results=15):
-    """Поиск в Semantic Scholar (ИИ-поисковик по науке)"""
     try:
         url = f"https://api.semanticscholar.org/graph/v1/paper/search"
         params = {
@@ -170,7 +398,6 @@ def search_semantic_scholar(query, max_results=15):
             year = paper.get('year', 'Год неизвестен')
             citations = paper.get('citationCount', 0)
             
-            # Проверяем, есть ли PDF через DOI
             external_ids = paper.get('externalIds', {})
             doi = external_ids.get('DOI', '')
             pdf_url = f"https://doi.org/{doi}" if doi else ''
@@ -186,54 +413,10 @@ def search_semantic_scholar(query, max_results=15):
                 'has_full_text': bool(doi)
             })
         
-        # Сортируем по цитированиям
         articles.sort(key=lambda x: x.get('citations', 0), reverse=True)
         return articles
     except Exception as e:
         return [{'error': f'Ошибка поиска в Semantic Scholar: {str(e)}'}]
-
-def search_core(query, max_results=15):
-    """Поиск в CORE (крупнейший агрегатор открытых научных работ)"""
-    try:
-        url = f"https://api.core.ac.uk/v3/search/works"
-        headers = {'Authorization': 'Bearer'}  # Базовый поиск без ключа
-        
-        params = {
-            'q': query,
-            'limit': max_results,
-            'offset': 0
-        }
-        
-        response = requests.get(url, params=params, headers=headers, timeout=15)
-        
-        if response.status_code == 401:
-            # Если нужен API ключ, возвращаем пустой список
-            return [{'error': 'CORE требует API ключ для полного доступа. Используй другие базы.'}]
-        
-        response.raise_for_status()
-        data = response.json()
-        
-        articles = []
-        for item in data.get('results', []):
-            title = item.get('title', 'Без названия')
-            abstract = item.get('abstract', 'Аннотация недоступна')[:500]
-            authors_list = item.get('authors', [])[:3]
-            year = item.get('yearPublished', 'Год неизвестен')
-            pdf_url = item.get('downloadUrl', '')
-            
-            articles.append({
-                'title': title,
-                'abstract': abstract if abstract else 'Аннотация недоступна',
-                'authors': ', '.join(authors_list) if authors_list else 'Авторы неизвестны',
-                'year': year,
-                'pdf_url': pdf_url,
-                'source': 'CORE',
-                'has_full_text': bool(pdf_url)
-            })
-        
-        return articles
-    except Exception as e:
-        return [{'error': f'Ошибка поиска в CORE: {str(e)}'}]
 
 def download_and_extract_pdf(pdf_url, max_chars=15000):
     try:
@@ -566,7 +749,7 @@ else:
 st.sidebar.markdown("---")
 
 if selected_project:
-    st.sidebar.header(f" История: {selected_project['name']}")
+    st.sidebar.header(f"📂 История: {selected_project['name']}")
     history = load_history()
     project_history = [h for h in history if h.get("project_id") == selected_project["id"]]
     if project_history:
@@ -583,7 +766,7 @@ else:
     st.sidebar.header("📂 История задач"); st.sidebar.info("Выбери проект слева")
 
 st.sidebar.markdown("---")
-if load_key(): st.sidebar.success("🔑 Ключ активен")
+if load_key(): st.sidebar.success(" Ключ активен")
 else: st.sidebar.error("❌ Ключ не найден")
 
 if selected_project:
@@ -599,6 +782,61 @@ with col2:
             try:
                 ask(model, "ОК"); st.success(f"✅ {name} — на связи")
             except Exception as e: st.error(f"❌ {name} — ошибка: {e}")
+
+st.markdown("---")
+
+# === ГЕНЕРАТОР ФИНАНСОВЫХ МОДЕЛЕЙ ===
+st.markdown("""<div class="ai-card card-finance"><h3 style="margin: 0 0 10px 0; color: #E74C3C;">💼 Генератор финансовых моделей</h3><p style="margin: 0; color: #A89F91;">💡 Создай профессиональную финансовую модель с NPV, IRR, ROI и графиками за 1 минуту.</p></div>""", unsafe_allow_html=True)
+
+st.markdown("**Введи параметры инвестиционного проекта:**")
+col1, col2 = st.columns(2)
+
+with col1:
+    initial_investment = st.number_input("Начальные инвестиции (руб):", min_value=0, value=1000000, step=100000)
+    annual_revenue = st.number_input("Годовая выручка год 1 (руб):", min_value=0, value=500000, step=50000)
+    annual_costs = st.number_input("Годовые операционные расходы (руб):", min_value=0, value=300000, step=50000)
+
+with col2:
+    growth_rate = st.number_input("Темп роста выручки (% в год):", min_value=0, max_value=100, value=10, step=5)
+    discount_rate = st.number_input("Ставка дисконтирования (%):", min_value=0, max_value=100, value=12, step=1)
+    years = st.number_input("Горизонт планирования (лет):", min_value=1, max_value=10, value=5, step=1)
+
+if st.button("📊 Создать финансовую модель", use_container_width=True):
+    with st.spinner("Генерирую финансовую модель..."):
+        try:
+            excel_path = create_financial_model(
+                initial_investment, 
+                annual_revenue, 
+                annual_costs, 
+                growth_rate, 
+                discount_rate, 
+                years
+            )
+            
+            with open(excel_path, "rb") as f:
+                st.download_button(
+                    label=" Скачать финансовую модель в Excel",
+                    data=f,
+                    file_name=f"Финансовая_модель_{datetime.now().strftime('%d%m%Y_%H%M')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+            
+            st.success("✅ Финансовая модель создана!")
+            st.info("""
+            **Что внутри:**
+            - 📋 Лист "Исходные данные" - все параметры проекта
+            - 💰 Лист "Денежные потоки" - прогноз на {years} лет с формулами
+            - 📈 Лист "Ключевые показатели" - NPV, IRR, ROI, срок окупаемости
+            - 📊 Лист "Резюме" - вывод о целесообразности проекта
+            - 📉 Графики денежных потоков и NPV
+            
+            **Все расчёты автоматические!** Меняй параметры на листе "Исходные данные" - все формулы пересчитаются.
+            """.format(years=years))
+            
+            os.remove(excel_path)
+            
+        except Exception as e:
+            st.error(f"❌ Ошибка создания модели: {str(e)}")
 
 st.markdown("---")
 
@@ -627,7 +865,7 @@ with col2:
 
 if 'library_books' in st.session_state and st.session_state['library_books']:
     books = st.session_state['library_books']
-    st.markdown(f"### 📚 Найдено книг: {len(books)}")
+    st.markdown(f"###  Найдено книг: {len(books)}")
     
     for i, book in enumerate(books[:10], 1):
         st.markdown(f"""
@@ -653,7 +891,6 @@ with col1:
     use_openalex = st.checkbox("🌍 OpenAlex (Мировая база)", value=True)
 with col2:
     use_semantic_scholar = st.checkbox("🤖 Semantic Scholar (ИИ-поиск)", value=True)
-    use_core = st.checkbox("📚 CORE (Открытые работы)", value=False)
 
 deep_analysis = st.checkbox("🎓 Глубокое исследование (скачать полные тексты)", value=True)
 
@@ -676,11 +913,6 @@ if st.button("🔍 Найти статьи", use_container_width=True):
         if use_semantic_scholar:
             with st.spinner(" Ищу в Semantic Scholar..."):
                 articles = search_semantic_scholar(search_query)
-                all_articles.extend(articles)
-        
-        if use_core:
-            with st.spinner("📚 Ищу в CORE..."):
-                articles = search_core(search_query)
                 all_articles.extend(articles)
         
         full_text_articles = [a for a in all_articles if a.get('has_full_text', False)]
@@ -736,7 +968,7 @@ elif 'search_results' in st.session_state and st.session_state['search_results']
             selected_articles.append(article)
     
     if selected_articles:
-        if st.button("📥 Добавить выбранные статьи", use_container_width=True):
+        if st.button(" Добавить выбранные статьи", use_container_width=True):
             articles_text = "# 📚 НАУЧНЫЕ СТАТЬИ\n\n"
             for i, article in enumerate(selected_articles, 1):
                 articles_text += f"## [{i}] {article['title']}\n**Авторы:** {article['authors']} | **Год:** {article['year']} | **Источник:** {article['source']}\n\n{article['abstract']}\n\n---\n\n"
@@ -747,7 +979,7 @@ elif 'search_results' in st.session_state and st.session_state['search_results']
 st.markdown("---")
 
 # === ЗАГРУЗКА ФАЙЛОВ ===
-st.markdown("""<div class="ai-card card-excel"><h3 style="margin: 0 0 10px 0; color: #27AE60;">📎 Загрузи материалы (PDF, DOCX, TXT, Excel, фото)</h3><p style="margin: 0; color: #A89F91;"> Поддерживаются все форматы документов и Excel-файлы.</p></div>""", unsafe_allow_html=True)
+st.markdown("""<div class="ai-card card-excel"><h3 style="margin: 0 0 10px 0; color: #27AE60;">📎 Загрузи материалы (PDF, DOCX, TXT, Excel, фото)</h3><p style="margin: 0; color: #A89F91;">💡 Поддерживаются все форматы документов и Excel-файлы.</p></div>""", unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("Выбери файл:", type=['pdf', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'xlsx', 'xls'])
 file_text = ""; file_name = ""; file_type = ""
@@ -759,7 +991,7 @@ if uploaded_file is not None:
         filename_lower = file_name.lower()
         
         if filename_lower.endswith(('.jpg', '.jpeg', '.png')):
-            with st.spinner("👁️ Анализирую изображение..."):
+            with st.spinner("️ Анализирую изображение..."):
                 file_text = analyze_image(uploaded_file)
             st.success(f"✅ Изображение проанализировано: {file_name}")
             file_type = "image"
@@ -772,7 +1004,7 @@ if uploaded_file is not None:
                 st.success(f"✅ Excel-файл проанализирован: {file_name} ({num_sheets} листов)")
                 
                 if excel_analysis:
-                    st.info(f"📊 **Структура данных:**")
+                    st.info(f" **Структура данных:**")
                     if excel_analysis['has_financial_data']:
                         st.success("💰 Обнаружены финансовые данные")
                     if excel_analysis['has_dates']:
@@ -809,7 +1041,7 @@ col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     if st.button("🚀 Запустить обсуждение", use_container_width=True):
         if not selected_project: st.warning("⚠️ Выбери проект")
-        elif not task.strip(): st.warning("⚠️ Введи задачу")
+        elif not task.strip(): st.warning("️ Введи задачу")
         else:
             try:
                 context_parts = []
@@ -866,7 +1098,7 @@ with col2:
                 
                 full_context = "\n".join(context_parts) if context_parts else ""
                 
-                instructions = """# ⚠️ ВАЖНЫЕ ИНСТРУКЦИИ:
+                instructions = """# ️ ВАЖНЫЕ ИНСТРУКЦИИ:
 1. Работай с НАУЧНЫМ/ФИНАНСОВЫМ материалом. Точность критична.
 2. Используй ТОЛЬКО информацию из источников.
 3. НЕ выдумывай факты или цифры.
@@ -931,7 +1163,7 @@ with col2:
 
 Будь строгим.""")
                 
-                st.markdown(f"""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️ Критика от Claude</h3></div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️⃣ Критика от Claude</h3></div>""", unsafe_allow_html=True)
                 st.write(critique)
 
                 with st.spinner("🎯 Qwen готовит финал..."):
@@ -953,7 +1185,7 @@ with col2:
 3. Структура: Введение, Анализ, Выводы, СПИСОК ИСТОЧНИКОВ
 4. Готовый профессиональный документ""")
                 
-                st.markdown(f"""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️ ✅ Финал от Qwen</h3></div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️⃣ ✅ Финал от Qwen</h3></div>""", unsafe_allow_html=True)
                 st.write(final)
 
                 # Word документ
@@ -989,7 +1221,7 @@ with col2:
                 
                 with open(tmp_path, "rb") as f:
                     st.download_button(
-                        label=" Скачать в Word",
+                        label="📥 Скачать в Word",
                         data=f,
                         file_name=f"Отчёт_{datetime.now().strftime('%d%m%Y_%H%M')}.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
