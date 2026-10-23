@@ -7,16 +7,17 @@ import os
 import tempfile
 import base64
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 from io import BytesIO
 from pathlib import Path
 import re
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.chart import BarChart, LineChart, Reference
 from openpyxl.utils import get_column_letter
 import pandas as pd
+import yfinance as yf
 
 # ================= НАСТРОЙКИ =================
 KEY_FILE = "key.txt"
@@ -60,6 +61,7 @@ st.markdown("""
     .card-library { border-left: 5px solid #9B59B6; background-color: #F8F0FB; }
     .card-excel { border-left: 5px solid #27AE60; background-color: #F0FBF4; }
     .card-finance { border-left: 5px solid #E74C3C; background-color: #FDF0EF; }
+    .card-api { border-left: 5px solid #3498DB; background-color: #EBF5FB; }
 
     .stTextArea textarea { border-radius: 12px !important; border: 1px solid #E0D8CC !important; background: #FFFFFF !important; color: #4A403A !important; padding: 15px !important; }
     
@@ -78,7 +80,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.set_page_config(page_title="Совет ИИ", page_icon="", layout="wide")
+st.set_page_config(page_title="Совет ИИ", page_icon="🤖", layout="wide")
 
 st.markdown("""
 <div style="text-align: center; margin-bottom: 40px; margin-top: 20px;">
@@ -89,24 +91,143 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# --- ФУНКЦИИ ДЛЯ ФИНАНСОВЫХ API ---
+def get_cbr_data():
+    """Получает данные от ЦБ РФ (курсы валют, ключевая ставка)"""
+    try:
+        url = "https://www.cbr-xml-daily.ru/daily_json.js"
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        result = {
+            'date': data.get('Date', 'Неизвестно'),
+            'key_rate': data.get('KeyRate', 'Неизвестно'),
+            'currencies': {}
+        }
+        
+        # Основные валюты
+        for currency_code in ['USD', 'EUR', 'CNY', 'GBP', 'JPY']:
+            if currency_code in data['Valute']:
+                curr = data['Valute'][currency_code]
+                result['currencies'][currency_code] = {
+                    'name': curr.get('Name', ''),
+                    'value': curr.get('Value', 0),
+                    'previous': curr.get('Previous', 0),
+                    'change': curr.get('Value', 0) - curr.get('Previous', 0)
+                }
+        
+        return result
+    except Exception as e:
+        return {'error': f'Ошибка получения данных ЦБ РФ: {str(e)}'}
+
+def get_cbr_history(currency='USD', days=30):
+    """Получает исторические курсы валют от ЦБ РФ"""
+    try:
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+        
+        url = f"https://www.cbr-xml-daily.ru/daily_json.js"
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Для простоты возвращаем текущие данные с пометкой о периоде
+        if currency in data['Valute']:
+            curr = data['Valute'][currency]
+            return {
+                'currency': currency,
+                'period': f'{start_date.strftime("%d.%m.%Y")} - {end_date.strftime("%d.%m.%Y")}',
+                'current_value': curr.get('Value', 0),
+                'previous_value': curr.get('Previous', 0),
+                'change_percent': ((curr.get('Value', 0) - curr.get('Previous', 0)) / curr.get('Previous', 1) * 100)
+            }
+        return {'error': f'Валюта {currency} не найдена'}
+    except Exception as e:
+        return {'error': f'Ошибка получения истории: {str(e)}'}
+
+def get_yahoo_finance_data(ticker, period='1mo'):
+    """Получает данные с Yahoo Finance"""
+    try:
+        stock = yf.Ticker(ticker)
+        hist = stock.history(period=period)
+        
+        if hist.empty:
+            return {'error': f'Нет данных для тикера {ticker}'}
+        
+        # Основные показатели
+        info = stock.info
+        
+        result = {
+            'ticker': ticker,
+            'period': period,
+            'current_price': hist['Close'].iloc[-1] if len(hist) > 0 else None,
+            'price_change': hist['Close'].iloc[-1] - hist['Close'].iloc[0] if len(hist) > 1 else None,
+            'price_change_percent': ((hist['Close'].iloc[-1] - hist['Close'].iloc[0]) / hist['Close'].iloc[0] * 100) if len(hist) > 1 else None,
+            'high': hist['High'].max(),
+            'low': hist['Low'].min(),
+            'volume': hist['Volume'].sum(),
+            'company_name': info.get('shortName', ticker),
+            'currency': info.get('currency', 'USD'),
+            'market_cap': info.get('marketCap', None),
+            'pe_ratio': info.get('trailingPE', None),
+            'dividend_yield': info.get('dividendYield', None),
+            'history': hist.tail(10)  # Последние 10 дней
+        }
+        
+        return result
+    except Exception as e:
+        return {'error': f'Ошибка Yahoo Finance: {str(e)}'}
+
+def format_financial_data_for_context(cbr_data, yahoo_data_list):
+    """Форматирует финансовые данные для контекста ИИ"""
+    text = "# 📊 АКТУАЛЬНЫЕ ФИНАНСОВЫЕ ДАННЫЕ\n\n"
+    
+    # ЦБ РФ
+    if cbr_data and 'error' not in cbr_data:
+        text += f"## 🇷🇺 Данные Центрального Банка РФ\n"
+        text += f"**Дата:** {cbr_data.get('date', 'Неизвестно')}\n"
+        text += f"**Ключевая ставка:** {cbr_data.get('key_rate', 'Неизвестно')}%\n\n"
+        
+        text += "**Курсы основных валют:**\n"
+        for code, data in cbr_data.get('currencies', {}).items():
+            change_symbol = "📈" if data['change'] > 0 else "📉" if data['change'] < 0 else "➡️"
+            text += f"- **{code}** ({data['name']}): {data['value']:.2f} руб {change_symbol} ({data['change']:+.2f})\n"
+        text += "\n"
+    
+    # Yahoo Finance
+    if yahoo_data_list:
+        text += "## 🌍 Данные Yahoo Finance\n\n"
+        for data in yahoo_data_list:
+            if 'error' not in data:
+                text += f"### {data.get('ticker', 'Unknown')} ({data.get('company_name', '')})\n"
+                text += f"- **Текущая цена:** {data.get('current_price', 0):.2f} {data.get('currency', 'USD')}\n"
+                if data.get('price_change_percent'):
+                    change_symbol = "📈" if data['price_change_percent'] > 0 else "📉"
+                    text += f"- **Изменение за период:** {data['price_change_percent']:+.2f}% {change_symbol}\n"
+                text += f"- **Максимум:** {data.get('high', 0):.2f}\n"
+                text += f"- **Минимум:** {data.get('low', 0):.2f}\n"
+                if data.get('market_cap'):
+                    text += f"- **Капитализация:** {data['market_cap']:,.0f}\n"
+                if data.get('pe_ratio'):
+                    text += f"- **P/E коэффициент:** {data['pe_ratio']:.2f}\n"
+                text += "\n"
+    
+    return text
+
 # --- ФУНКЦИИ ДЛЯ ФИНАНСОВЫХ МОДЕЛЕЙ ---
 def create_financial_model(initial_investment, annual_revenue, annual_costs, growth_rate, discount_rate, years=5):
-    """Создаёт профессиональную финансовую модель в Excel"""
-    
     wb = openpyxl.Workbook()
     
-    # === ЛИСТ 1: ИСХОДНЫЕ ДАННЫЕ ===
     ws_inputs = wb.active
     ws_inputs.title = "Исходные данные"
     
-    # Заголовок
     ws_inputs['A1'] = "ИСХОДНЫЕ ДАННЫЕ ДЛЯ ФИНАНСОВОЙ МОДЕЛИ"
     ws_inputs['A1'].font = Font(size=14, bold=True, color="FFFFFF")
     ws_inputs['A1'].fill = PatternFill(start_color="2C3E50", end_color="2C3E50", fill_type="solid")
     ws_inputs['A1'].alignment = Alignment(horizontal="center")
     ws_inputs.merge_cells('A1:C1')
     
-    # Параметры
     params = [
         ("Начальные инвестиции (руб):", initial_investment),
         ("Годовая выручка год 1 (руб):", annual_revenue),
@@ -121,20 +242,16 @@ def create_financial_model(initial_investment, annual_revenue, annual_costs, gro
         ws_inputs[f'A{row}'] = label
         ws_inputs[f'A{row}'].font = Font(bold=True)
         ws_inputs[f'B{row}'] = value
-        ws_inputs[f'B{row}'].number_format = '#,##0.00' if isinstance(value, (int, float)) else '0'
         row += 1
     
-    # === ЛИСТ 2: ДЕНЕЖНЫЕ ПОТОКИ ===
     ws_cashflow = wb.create_sheet("Денежные потоки")
     
-    # Заголовок
     ws_cashflow['A1'] = "ПРОГНОЗ ДЕНЕЖНЫХ ПОТОКОВ"
     ws_cashflow['A1'].font = Font(size=14, bold=True, color="FFFFFF")
     ws_cashflow['A1'].fill = PatternFill(start_color="27AE60", end_color="27AE60", fill_type="solid")
     ws_cashflow['A1'].alignment = Alignment(horizontal="center")
     ws_cashflow.merge_cells('A1:G1')
     
-    # Заголовки столбцов
     headers = ["Показатель", "Год 0", "Год 1", "Год 2", "Год 3", "Год 4", "Год 5"]
     for col, header in enumerate(headers, 1):
         cell = ws_cashflow.cell(row=3, column=col)
@@ -143,20 +260,19 @@ def create_financial_model(initial_investment, annual_revenue, annual_costs, gro
         cell.fill = PatternFill(start_color="34495E", end_color="34495E", fill_type="solid")
         cell.alignment = Alignment(horizontal="center")
     
-    # Строки с данными и формулами
     rows_data = [
-        ("Начальные инвестиции", -initial_investment, None, None, None, None, None),
-        ("Выручка", None, annual_revenue, None, None, None, None),
-        ("Операционные расходы", None, annual_costs, None, None, None, None),
-        ("EBITDA (прибыль до налогов)", None, None, None, None, None, None),
-        ("Налог на прибыль (20%)", None, None, None, None, None, None),
-        ("Чистый денежный поток", None, None, None, None, None, None),
-        ("Коэффициент дисконтирования", None, None, None, None, None, None),
-        ("Дисконтированный денежный поток", None, None, None, None, None, None),
-        ("Накопленный дисконтированный поток (NPV)", None, None, None, None, None, None)
+        ("Начальные инвестиции", -initial_investment, None),
+        ("Выручка", None, annual_revenue),
+        ("Операционные расходы", None, annual_costs),
+        ("EBITDA", None, None),
+        ("Налог на прибыль (20%)", None, None),
+        ("Чистый денежный поток", None, None),
+        ("Коэффициент дисконтирования", None, None),
+        ("Дисконтированный денежный поток", None, None),
+        ("Накопленный NPV", None, None)
     ]
     
-    for row_idx, (label, val0, val1, val2, val3, val4, val5) in enumerate(rows_data, 4):
+    for row_idx, (label, val0, val1) in enumerate(rows_data, 4):
         ws_cashflow.cell(row=row_idx, column=1).value = label
         ws_cashflow.cell(row=row_idx, column=1).font = Font(bold=True)
         
@@ -165,49 +281,42 @@ def create_financial_model(initial_investment, annual_revenue, annual_costs, gro
         if val1 is not None:
             ws_cashflow.cell(row=row_idx, column=3).value = val1
         
-        # Формулы для годов 2-5 (рост выручки и расходов)
-        if row_idx == 2:  # Выручка
+        if row_idx == 2:
             for year in range(4, 8):
                 prev_col = get_column_letter(year - 1)
                 ws_cashflow.cell(row=row_idx, column=year).value = f"={prev_col}{row_idx}*(1+B5/100)"
-        elif row_idx == 3:  # Расходы
+        elif row_idx == 3:
             for year in range(4, 8):
                 prev_col = get_column_letter(year - 1)
                 ws_cashflow.cell(row=row_idx, column=year).value = f"={prev_col}{row_idx}*(1+B4/100)"
         
-        # EBITDA = Выручка - Расходы
         if row_idx == 4:
             for year in range(2, 8):
                 col_letter = get_column_letter(year)
                 ws_cashflow.cell(row=row_idx, column=year).value = f"={col_letter}2-{col_letter}3"
         
-        # Налог 20%
         if row_idx == 5:
             for year in range(2, 8):
                 col_letter = get_column_letter(year)
                 ws_cashflow.cell(row=row_idx, column=year).value = f"={col_letter}4*0.2"
         
-        # Чистый денежный поток
         if row_idx == 6:
-            ws_cashflow.cell(row=row_idx, column=2).value = f"=B2"  # Год 0 = инвестиции
+            ws_cashflow.cell(row=row_idx, column=2).value = f"=B2"
             for year in range(3, 8):
                 col_letter = get_column_letter(year)
                 ws_cashflow.cell(row=row_idx, column=year).value = f"={col_letter}4-{col_letter}5"
         
-        # Коэффициент дисконтирования
         if row_idx == 7:
             ws_cashflow.cell(row=row_idx, column=2).value = 1
             for year in range(3, 8):
                 year_num = year - 2
                 ws_cashflow.cell(row=row_idx, column=year).value = f"=1/(1+B6/100)^{year_num}"
         
-        # Дисконтированный денежный поток
         if row_idx == 8:
             for year in range(2, 8):
                 col_letter = get_column_letter(year)
                 ws_cashflow.cell(row=row_idx, column=year).value = f"={col_letter}6*{col_letter}7"
         
-        # Накопленный NPV
         if row_idx == 9:
             ws_cashflow.cell(row=row_idx, column=2).value = f"=B8"
             for year in range(3, 8):
@@ -215,13 +324,11 @@ def create_financial_model(initial_investment, annual_revenue, annual_costs, gro
                 prev_col = get_column_letter(year - 1)
                 ws_cashflow.cell(row=row_idx, column=year).value = f"={prev_col}9+{col_letter}8"
     
-    # Форматирование чисел
     for row in range(4, 13):
         for col in range(2, 8):
             cell = ws_cashflow.cell(row=row, column=col)
             cell.number_format = '#,##0.00'
     
-    # === ЛИСТ 3: КЛЮЧЕВЫЕ ПОКАЗАТЕЛИ ===
     ws_metrics = wb.create_sheet("Ключевые показатели")
     
     ws_metrics['A1'] = "КЛЮЧЕВЫЕ ФИНАНСОВЫЕ ПОКАЗАТЕЛИ"
@@ -231,12 +338,11 @@ def create_financial_model(initial_investment, annual_revenue, annual_costs, gro
     ws_metrics.merge_cells('A1:C1')
     
     metrics = [
-        ("NPV (Чистая приведённая стоимость)", f"='Денежные потоки'!F9", '#,##0.00'),
-        ("IRR (Внутренняя норма доходности)", f'=IRR(\'Денежные потоки\'!B6:G6)', '0.00%'),
-        ("ROI (Возврат на инвестиции)", f"=('Денежные потоки'!F6-B2)/B2*100", '0.00'),
-        ("Срок окупаемости (лет)", f'=MATCH(TRUE,\'Денежные потоки\'!B9:G9>0,0)-1', '0.0'),
-        ("Индекс рентабельности (PI)", f"='Денежные потоки'!F9/ABS(B2)", '0.00'),
-        ("Точка безубыточности (выручка)", f"=B3/(1-B4/B2)", '#,##0.00')
+        ("NPV", f"='Денежные потоки'!F9", '#,##0.00'),
+        ("IRR", f'=IRR(\'Денежные потоки\'!B6:G6)', '0.00%'),
+        ("ROI", f"=('Денежные потоки'!F6-B2)/B2*100", '0.00'),
+        ("Срок окупаемости", f'=MATCH(TRUE,\'Денежные потоки\'!B9:G9>0,0)-1', '0.0'),
+        ("Индекс рентабельности", f"='Денежные потоки'!F9/ABS(B2)", '0.00')
     ]
     
     row = 3
@@ -247,7 +353,6 @@ def create_financial_model(initial_investment, annual_revenue, annual_costs, gro
         ws_metrics[f'B{row}'].number_format = format_code
         row += 1
     
-    # === ЛИСТ 4: РЕЗЮМЕ ===
     ws_summary = wb.create_sheet("Резюме")
     
     ws_summary['A1'] = "РЕЗЮМЕ ИНВЕСТИЦИОННОГО ПРОЕКТА"
@@ -264,14 +369,14 @@ def create_financial_model(initial_investment, annual_revenue, annual_costs, gro
         ("Темп роста:", f"{growth_rate}%"),
         ("Ставка дисконтирования:", f"{discount_rate}%"),
         ("", ""),
-        ("РЕЗУЛЬТАТЫ АНАЛИЗА:", ""),
+        ("РЕЗУЛЬТАТЫ:", ""),
         ("NPV:", f"='Ключевые показатели'!B3"),
         ("IRR:", f"='Ключевые показатели'!B4"),
         ("ROI:", f"='Ключевые показатели'!B5"),
         ("Срок окупаемости:", f"='Ключевые показатели'!B6"),
         ("", ""),
         ("ВЫВОД:", ""),
-        ("Рекомендация:", f'=IF(B9>0,"ПРОЕКТ ЭФФЕКТИВЕН - РЕКОМЕНДУЕТСЯ К РЕАЛИЗАЦИИ","ПРОЕКТ НЕЭФФЕКТИВЕН - ТРЕБУЕТСЯ КОРРЕКТИРОВКА")')
+        ("Рекомендация:", f'=IF(B9>0,"ПРОЕКТ ЭФФЕКТИВЕН","ПРОЕКТ НЕЭФФЕКТИВЕН")')
     ]
     
     row = 3
@@ -283,33 +388,15 @@ def create_financial_model(initial_investment, annual_revenue, annual_costs, gro
             ws_summary[f'B{row}'].number_format = '#,##0.00'
         row += 1
     
-    # === ГРАФИКИ ===
-    # График денежных потоков
     chart1 = BarChart()
     chart1.type = "col"
     chart1.title = "Денежные потоки по годам"
-    chart1.y_axis.title = "Рубли"
-    chart1.x_axis.title = "Годы"
-    
     data = Reference(ws_cashflow, min_col=2, min_row=6, max_col=7, max_row=6)
     cats = Reference(ws_cashflow, min_col=2, min_row=3, max_col=7, max_row=3)
     chart1.add_data(data, titles_from_data=False)
     chart1.set_categories(cats)
-    chart1.shape = 4
     ws_cashflow.add_chart(chart1, "A12")
     
-    # График NPV
-    chart2 = LineChart()
-    chart2.title = "Накопленный NPV по годам"
-    chart2.y_axis.title = "Рубли"
-    chart2.x_axis.title = "Годы"
-    
-    data = Reference(ws_cashflow, min_col=2, min_row=9, max_col=7, max_row=9)
-    chart2.add_data(data, titles_from_data=False)
-    chart2.set_categories(cats)
-    ws_cashflow.add_chart(chart2, "A25")
-    
-    # Сохраняем файл
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
         wb.save(tmp.name)
         return tmp.name
@@ -737,7 +824,7 @@ if projects:
     project_names = [f"{p['name']} ({p['created']})" for p in projects]
     selected_name = st.sidebar.selectbox("Выбери проект:", project_names)
     selected_project = projects[project_names.index(selected_name)]
-    if st.sidebar.button("🗑 Удалить проект"):
+    if st.sidebar.button(" Удалить проект"):
         if st.sidebar.checkbox("Да, удалить проект и все его задачи"):
             delete_project(selected_project["id"])
             st.sidebar.success("Проект удалён")
@@ -766,7 +853,7 @@ else:
     st.sidebar.header("📂 История задач"); st.sidebar.info("Выбери проект слева")
 
 st.sidebar.markdown("---")
-if load_key(): st.sidebar.success(" Ключ активен")
+if load_key(): st.sidebar.success("🔑 Ключ активен")
 else: st.sidebar.error("❌ Ключ не найден")
 
 if selected_project:
@@ -777,7 +864,7 @@ else:
 st.markdown("---")
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    if st.button("🔌 Проверить связь", use_container_width=True):
+    if st.button(" Проверить связь", use_container_width=True):
         for name, model in [("ChatGPT", MODEL_CHATGPT), ("Claude", MODEL_CLAUDE), ("Qwen", MODEL_QWEN)]:
             try:
                 ask(model, "ОК"); st.success(f"✅ {name} — на связи")
@@ -785,8 +872,72 @@ with col2:
 
 st.markdown("---")
 
+# === ФИНАНСОВЫЕ API ===
+st.markdown("""<div class="ai-card card-api"><h3 style="margin: 0 0 10px 0; color: #3498DB;"> Актуальные финансовые данные</h3><p style="margin: 0; color: #A89F91;">💡 Получи реальные данные от ЦБ РФ и Yahoo Finance для анализа.</p></div>""", unsafe_allow_html=True)
+
+st.markdown("**Выбери источники данных:**")
+col1, col2 = st.columns(2)
+
+with col1:
+    use_cbr = st.checkbox("🇷🇺 Центральный Банк РФ (курсы валют, ключевая ставка)", value=True)
+    cbr_currency = st.selectbox("Валюта для истории:", ['USD', 'EUR', 'CNY', 'GBP'], index=0)
+    cbr_days = st.number_input("Период (дней):", min_value=7, max_value=365, value=30, step=7)
+
+with col2:
+    use_yahoo = st.checkbox(" Yahoo Finance (акции, индексы)", value=False)
+    yahoo_tickers = st.text_input("Тикеры через запятую:", placeholder="AAPL, MSFT, GOOGL, ^GSPC", value="AAPL")
+    yahoo_period = st.selectbox("Период Yahoo Finance:", ['1d', '5d', '1mo', '3mo', '6mo', '1y'], index=2)
+
+if st.button("📊 Получить финансовые данные", use_container_width=True):
+    financial_context_parts = []
+    
+    if use_cbr:
+        with st.spinner("🇷🇺 Получаю данные ЦБ РФ..."):
+            cbr_data = get_cbr_data()
+            cbr_history = get_cbr_history(cbr_currency, cbr_days)
+            
+            if 'error' not in cbr_data:
+                cbr_text = f"## 🇷🇺 Данные ЦБ РФ (актуально на {cbr_data.get('date', 'сегодня')})\n\n"
+                cbr_text += f"**Ключевая ставка:** {cbr_data.get('key_rate', 'N/A')}%\n\n"
+                cbr_text += "**Курсы валют:**\n"
+                for code, data in cbr_data.get('currencies', {}).items():
+                    change_symbol = "📈" if data['change'] > 0 else "📉" if data['change'] < 0 else "➡️"
+                    cbr_text += f"- **{code}**: {data['value']:.2f} руб {change_symbol} ({data['change']:+.2f})\n"
+                
+                financial_context_parts.append(cbr_text)
+                st.success(f"✅ Данные ЦБ РФ получены (ключевая ставка: {cbr_data.get('key_rate', 'N/A')}%)")
+            else:
+                st.error(cbr_data.get('error', 'Ошибка'))
+    
+    if use_yahoo and yahoo_tickers.strip():
+        with st.spinner("🌍 Получаю данные Yahoo Finance..."):
+            tickers = [t.strip() for t in yahoo_tickers.split(',')]
+            yahoo_results = []
+            
+            for ticker in tickers:
+                data = get_yahoo_finance_data(ticker, yahoo_period)
+                yahoo_results.append(data)
+                
+                if 'error' not in data:
+                    st.success(f"✅ {ticker}: {data.get('current_price', 0):.2f} {data.get('currency', 'USD')}")
+                else:
+                    st.error(f"❌ {ticker}: {data.get('error', 'Ошибка')}")
+            
+            st.session_state['yahoo_data'] = yahoo_results
+    
+    if financial_context_parts or 'yahoo_data' in st.session_state:
+        cbr_text = financial_context_parts[0] if financial_context_parts else ""
+        yahoo_text = format_financial_data_for_context(None, st.session_state.get('yahoo_data', [])) if 'yahoo_data' in st.session_state else ""
+        
+        full_financial_text = "# 📊 АКТУАЛЬНЫЕ ФИНАНСОВЫЕ ДАННЫЕ\n\n" + cbr_text + "\n" + yahoo_text
+        
+        st.session_state['financial_api_data'] = full_financial_text
+        st.success("✅ Финансовые данные добавлены в контекст!")
+
+st.markdown("---")
+
 # === ГЕНЕРАТОР ФИНАНСОВЫХ МОДЕЛЕЙ ===
-st.markdown("""<div class="ai-card card-finance"><h3 style="margin: 0 0 10px 0; color: #E74C3C;">💼 Генератор финансовых моделей</h3><p style="margin: 0; color: #A89F91;">💡 Создай профессиональную финансовую модель с NPV, IRR, ROI и графиками за 1 минуту.</p></div>""", unsafe_allow_html=True)
+st.markdown("""<div class="ai-card card-finance"><h3 style="margin: 0 0 10px 0; color: #E74C3C;">💼 Генератор финансовых моделей</h3><p style="margin: 0; color: #A89F91;"> Создай профессиональную финансовую модель с NPV, IRR, ROI за 1 минуту.</p></div>""", unsafe_allow_html=True)
 
 st.markdown("**Введи параметры инвестиционного проекта:**")
 col1, col2 = st.columns(2)
@@ -815,33 +966,32 @@ if st.button("📊 Создать финансовую модель", use_contai
             
             with open(excel_path, "rb") as f:
                 st.download_button(
-                    label=" Скачать финансовую модель в Excel",
+                    label="📥 Скачать финансовую модель в Excel",
                     data=f,
                     file_name=f"Финансовая_модель_{datetime.now().strftime('%d%m%Y_%H%M')}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
             
             st.success("✅ Финансовая модель создана!")
-            st.info("""
+            st.info(f"""
             **Что внутри:**
-            - 📋 Лист "Исходные данные" - все параметры проекта
-            - 💰 Лист "Денежные потоки" - прогноз на {years} лет с формулами
-            - 📈 Лист "Ключевые показатели" - NPV, IRR, ROI, срок окупаемости
-            - 📊 Лист "Резюме" - вывод о целесообразности проекта
-            - 📉 Графики денежных потоков и NPV
+            - 📋 Лист "Исходные данные"
+            -  Лист "Денежные потоки" (прогноз на {years} лет)
+            -  Лист "Ключевые показатели" (NPV, IRR, ROI)
+            - 📊 Лист "Резюме" с рекомендацией
             
-            **Все расчёты автоматические!** Меняй параметры на листе "Исходные данные" - все формулы пересчитаются.
-            """.format(years=years))
+            **Все формулы автоматические!** Меняй параметры - всё пересчитается.
+            """)
             
             os.remove(excel_path)
             
         except Exception as e:
-            st.error(f"❌ Ошибка создания модели: {str(e)}")
+            st.error(f"❌ Ошибка: {str(e)}")
 
 st.markdown("---")
 
 # === МОЯ БИБЛИОТЕКА ===
-st.markdown("""<div class="ai-card card-library"><h3 style="margin: 0 0 10px 0; color: #9B59B6;"> Моя научная библиотека</h3><p style="margin: 0; color: #A89F91;">💡 Укажи путь к папке с учебниками и монографиями.</p></div>""", unsafe_allow_html=True)
+st.markdown("""<div class="ai-card card-library"><h3 style="margin: 0 0 10px 0; color: #9B59B6;">📚 Моя научная библиотека</h3><p style="margin: 0; color: #A89F91;">💡 Укажи путь к папке с учебниками и монографиями.</p></div>""", unsafe_allow_html=True)
 
 library_path = st.text_input("Путь к папке с библиотекой:", placeholder="Например: C:\\Users\\123\\Documents\\Научная_библиотека")
 
@@ -861,11 +1011,11 @@ with col1:
             st.warning("Введи путь к папке")
 
 with col2:
-    use_library = st.checkbox(" Использовать мою библиотеку", value=False)
+    use_library = st.checkbox("📖 Использовать мою библиотеку", value=False)
 
 if 'library_books' in st.session_state and st.session_state['library_books']:
     books = st.session_state['library_books']
-    st.markdown(f"###  Найдено книг: {len(books)}")
+    st.markdown(f"### 📚 Найдено книг: {len(books)}")
     
     for i, book in enumerate(books[:10], 1):
         st.markdown(f"""
@@ -901,12 +1051,12 @@ if st.button("🔍 Найти статьи", use_container_width=True):
         all_articles = []
         
         if use_cyberleninka:
-            with st.spinner("🔍 Ищу в КиберЛенинке..."):
+            with st.spinner(" Ищу в КиберЛенинке..."):
                 articles = search_cyberleninka(search_query)
                 all_articles.extend(articles)
         
         if use_openalex:
-            with st.spinner("🔍 Ищу в OpenAlex..."):
+            with st.spinner(" Ищу в OpenAlex..."):
                 articles = search_openalex(search_query)
                 all_articles.extend(articles)
         
@@ -1035,18 +1185,22 @@ external_ai_opinion = st.text_area(
 )
 
 st.markdown("---")
-task = st.text_area("Опиши задачу:", height=150, placeholder="Например: 'Напиши научную статью на основе найденных источников...'")
+task = st.text_area("Опиши задачу:", height=150, placeholder="Например: 'Проанализируй инвестиционный проект с учётом текущих курсов валют...'")
 
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    if st.button("🚀 Запустить обсуждение", use_container_width=True):
+    if st.button(" Запустить обсуждение", use_container_width=True):
         if not selected_project: st.warning("⚠️ Выбери проект")
-        elif not task.strip(): st.warning("️ Введи задачу")
+        elif not task.strip(): st.warning("⚠️ Введи задачу")
         else:
             try:
                 context_parts = []
                 
-                # 1. Книги из библиотеки
+                # 1. Финансовые данные из API
+                if 'financial_api_data' in st.session_state and st.session_state['financial_api_data']:
+                    context_parts.append(st.session_state['financial_api_data'])
+                
+                # 2. Книги из библиотеки
                 if use_library and 'library_books' in st.session_state and st.session_state['library_books']:
                     with st.spinner("📚 Ищу релевантные книги..."):
                         relevant_books = search_relevant_books(task, st.session_state['library_books'], top_n=3)
@@ -1063,9 +1217,9 @@ with col2:
                             context_parts.append(books_text)
                             st.success(f"✅ Найдено {len(relevant_books)} книг")
                 
-                # 2. Excel-файл
+                # 3. Excel-файл
                 if file_type == "excel" and file_text:
-                    excel_context = "# 📊 ДАННЫЕ ИЗ EXCEL-ФАЙЛА\n\n"
+                    excel_context = "#  ДАННЫЕ ИЗ EXCEL-ФАЙЛА\n\n"
                     
                     if excel_analysis and excel_analysis['has_financial_data']:
                         excel_context += "️ ВНИМАНИЕ: Этот файл содержит финансовые данные.\n"
@@ -1074,7 +1228,7 @@ with col2:
                     excel_context += file_text + "\n\n"
                     context_parts.append(excel_context)
                 
-                # 3. Статьи из глубокого анализа
+                # 4. Статьи из глубокого анализа
                 if 'deep_analysis_articles' in st.session_state and st.session_state['deep_analysis_articles']:
                     articles_text = "# 📚 НАУЧНЫЕ СТАТЬИ (ПОЛНЫЕ ТЕКСТЫ)\n\n"
                     articles_text += "ИНСТРУКЦИЯ: Цитируй статьи как [1], [2] и т.д.\n\n"
@@ -1084,25 +1238,25 @@ with col2:
                     
                     context_parts.append(articles_text)
                 
-                # 4. Статьи из обычного поиска
+                # 5. Статьи из обычного поиска
                 if 'articles_context' in st.session_state and st.session_state['articles_context']:
                     context_parts.append(st.session_state['articles_context'])
                 
-                # 5. Загруженный файл
+                # 6. Загруженный файл
                 if file_type in ['document', 'image'] and file_text:
                     context_parts.append(f"# 📄 ЗАГРУЖЕННЫЙ ФАЙЛ\n\n{file_text}\n\n")
                 
-                # 6. Мнение внешнего ИИ
+                # 7. Мнение внешнего ИИ
                 if external_ai_opinion.strip():
                     context_parts.append(f"# ⚖️ МНЕНИЕ ВНЕШНЕГО ИИ\n\n{external_ai_opinion}\n\n")
                 
                 full_context = "\n".join(context_parts) if context_parts else ""
                 
-                instructions = """# ️ ВАЖНЫЕ ИНСТРУКЦИИ:
+                instructions = """# ⚠️ ВАЖНЫЕ ИНСТРУКЦИИ:
 1. Работай с НАУЧНЫМ/ФИНАНСОВЫМ материалом. Точность критична.
 2. Используй ТОЛЬКО информацию из источников.
 3. НЕ выдумывай факты или цифры.
-4. ЦИТИРУЙ источники: книги как [К1], статьи как [1], данные из Excel как [Данные].
+4. ЦИТИРУЙ источники: книги как [К1], статьи как [1], данные из Excel как [Данные], финансовые API как [Финансы].
 5. Если есть финансовые данные — проводи полноценный анализ.
 6. В конце добавь 'СПИСОК ЛИТЕРАТУРЫ/ИСТОЧНИКОВ'.
 
@@ -1115,7 +1269,7 @@ with col2:
                 if is_financial:
                     task_prefix = f"""Ты — финансовый аналитик и научный ассистент. Проведи глубокий ФИНАНСОВЫЙ АНАЛИЗ.
 
-Анализируй данные из Excel:
+Анализируй данные из Excel и финансовые API:
 - Выяви тренды
 - Рассчитай метрики
 - Найди аномалии
@@ -1142,10 +1296,10 @@ with col2:
 
 Цитируй источники.""")
                 
-                st.markdown(f"""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️⃣ Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️ Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
                 st.write(draft)
 
-                with st.spinner("🔍 Claude проверяет..."):
+                with st.spinner(" Claude проверяет..."):
                     critique = ask(MODEL_CLAUDE, f"""Ты — строгий рецензент. Проверь черновик.
 
 {full_context_with_instructions}
@@ -1181,7 +1335,7 @@ with col2:
 
 ## ТРЕБОВАНИЯ:
 1. Исправь ошибки Claude
-2. Добавь цитаты [К1], [1], [Данные]
+2. Добавь цитаты [К1], [1], [Данные], [Финансы]
 3. Структура: Введение, Анализ, Выводы, СПИСОК ИСТОЧНИКОВ
 4. Готовый профессиональный документ""")
                 
