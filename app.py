@@ -167,19 +167,19 @@ st.markdown("""
     
     .book-item { border-left-color: #B388FF !important; }
     
-    .branch-card {
-        background: rgba(255, 255, 255, 0.08) !important;
-        border-radius: 24px !important;
-        padding: 35px !important;
-        margin: 20px 0 !important;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
-        backdrop-filter: blur(15px) !important;
-        border: 2px solid rgba(0, 217, 255, 0.3) !important;
-        cursor: pointer !important;
-        transition: all 0.4s ease !important;
-        position: relative;
-        overflow: hidden;
-    }
+   .branch-card {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    padding: 20px !important;
+    margin: 10px 0 !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(15px) !important;
+    border: 2px solid rgba(0, 217, 255, 0.3) !important;
+    cursor: pointer !important;
+    transition: all 0.4s ease !important;
+    position: relative;
+    overflow: hidden;
+}
     
     .branch-card::before {
         content: '';
@@ -1000,11 +1000,11 @@ if not st.session_state['branch']:
     with col1:
         st.markdown("""
         <div class="branch-card branch-science glow-effect">
-            <h3 style="margin: 0 0 15px 0; font-size: 1.8rem;">🎓 Научная ветвь</h3>
-            <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 1.1rem;">
+            <h3 style="margin: 0 0 15px 0; font-size: 1.4rem;">🎓 Научная ветвь</h3>
+            <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 0.9rem;">
                 Научные статьи, диссертации, обзоры литературы
             </p>
-            <div style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 1.8;">
+            <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem; line-height: 1.8;">
                 ✅ Научный поиск (КиберЛенинка, OpenAlex, Semantic Scholar)<br>
                 ✅ Моя научная библиотека<br>
                 ✅ Структура: Введение → Обзор → Методология → Выводы
