@@ -39,10 +39,18 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
     
     .stApp {
-        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-        font-family: 'Inter', 'Segoe UI', sans-serif !important;
-    }
-    
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) !important;
+    font-family: 'Inter', 'Segoe UI', sans-serif !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+}
+
+.stApp .block-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 20px 40px !important;
+}
     .stApp p, .stApp div, .stApp label, .stApp h1, .stApp h2, .stApp h3 {
         color: #E0E0E0 !important;
     }
@@ -59,26 +67,26 @@ st.markdown("""
         backdrop-filter: blur(10px);
     }
     
-    .stButton>button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        color: #FFFFFF !important;
-        border: 2px solid rgba(0, 217, 255, 0.5) !important;
-        border-radius: 12px !important;
-        padding: 12px 24px !important;
-        font-weight: 600 !important;
-        font-size: 16px !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    
-    .stButton>button:hover {
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6) !important;
-        border-color: #00D9FF !important;
-    }
+   .stButton>button {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%) !important;
+    color: #FFFFFF !important;
+    border: 2px solid rgba(0, 217, 255, 0.4) !important;
+    border-radius: 14px !important;
+    padding: 14px 28px !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3) !important;
+    letter-spacing: 1px;
+    width: 100% !important;
+}
+
+.stButton>button:hover {
+    background: linear-gradient(135deg, rgba(118, 75, 162, 0.9) 0%, rgba(102, 126, 234, 0.9) 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5) !important;
+    border-color: #00D9FF !important;
+}
     
     .ai-card {
         background: rgba(255, 255, 255, 0.05) !important;
@@ -169,43 +177,61 @@ st.markdown("""
     
   .branch-card {
     background: rgba(255, 255, 255, 0.06) !important;
-    border-radius: 12px !important;
-    padding: 15px 20px !important;
-    margin: 0 8px !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+    border-radius: 20px !important;
+    padding: 30px 35px !important;
+    margin: 0 15px !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4) !important;
     backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(0, 217, 255, 0.2) !important;
+    border: 2px solid rgba(0, 217, 255, 0.2) !important;
     cursor: pointer !important;
-    transition: all 0.3s ease !important;
+    transition: all 0.4s ease !important;
     position: relative;
     overflow: hidden;
-    min-height: auto !important;
+    min-height: 280px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.branch-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.08), transparent);
+    transition: left 0.6s ease;
+}
+
+.branch-card:hover::before {
+    left: 100%;
 }
 
 .branch-card:hover {
-    transform: translateY(-3px) !important;
-    box-shadow: 0 8px 30px rgba(0, 217, 255, 0.25) !important;
+    transform: translateY(-5px) scale(1.02) !important;
+    box-shadow: 0 15px 50px rgba(0, 217, 255, 0.25) !important;
     border-color: rgba(0, 217, 255, 0.5) !important;
 }
 
 .branch-science { 
-    border-left: 4px solid #B388FF !important;
-    background: linear-gradient(90deg, rgba(179, 136, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+    border-left: 6px solid #B388FF !important;
+    background: linear-gradient(135deg, rgba(179, 136, 255, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
 }
 
 .branch-legal { 
-    border-left: 4px solid #00D9FF !important;
-    background: linear-gradient(90deg, rgba(0, 217, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+    border-left: 6px solid #00D9FF !important;
+    background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
 }
 
 .branch-business { 
-    border-left: 4px solid #00FF88 !important;
-    background: linear-gradient(90deg, rgba(0, 255, 136, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+    border-left: 6px solid #00FF88 !important;
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
 }
 
-.branch-science h3 { color: #B388FF !important; text-shadow: 0 0 15px rgba(179, 136, 255, 0.4) !important; }
-.branch-legal h3 { color: #00D9FF !important; text-shadow: 0 0 15px rgba(0, 217, 255, 0.4) !important; }
-.branch-business h3 { color: #00FF88 !important; text-shadow: 0 0 15px rgba(0, 255, 136, 0.4) !important; }
+.branch-science h3 { color: #B388FF !important; text-shadow: 0 0 20px rgba(179, 136, 255, 0.5) !important; }
+.branch-legal h3 { color: #00D9FF !important; text-shadow: 0 0 20px rgba(0, 217, 255, 0.5) !important; }
+.branch-business h3 { color: #00FF88 !important; text-shadow: 0 0 20px rgba(0, 255, 136, 0.5) !important; }
     
     .branch-card::before {
         content: '';
@@ -255,12 +281,12 @@ st.markdown("""
     
     /* Стили для фонового изображения на главной */
    .main-header {
-    background: linear-gradient(90deg, rgba(15, 12, 41, 0.85) 0%, rgba(48, 43, 99, 0.75) 100%), 
+    background: linear-gradient(90deg, rgba(15, 12, 41, 0.9) 0%, rgba(48, 43, 99, 0.8) 50%, rgba(36, 36, 62, 0.9) 100%), 
                 url('https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1920&q=80') center/cover;
-    border-radius: 12px;
-    padding: 15px 25px;
-    margin: 0 0 15px 0;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    border-radius: 16px;
+    padding: 30px 50px;
+    margin: 0 0 30px 0;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
     border: 1px solid rgba(0, 217, 255, 0.3);
     display: flex;
     align-items: center;
@@ -270,17 +296,18 @@ st.markdown("""
 }
 
 .main-header h1 {
-    font-size: 1.6rem !important;
+    font-size: 2.5rem !important;
     margin: 0 !important;
     background: linear-gradient(135deg, #00D9FF 0%, #B388FF 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     white-space: nowrap;
+    letter-spacing: 2px;
 }
 
 .main-header p {
-    font-size: 0.95rem !important;
+    font-size: 1.1rem !important;
     color: rgba(255, 255, 255, 0.85) !important;
     margin: 0 !important;
     text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
@@ -1014,38 +1041,41 @@ if st.session_state['open_entry']:
         st.session_state['open_entry'] = None
 
 if not st.session_state['branch']:
-  if not st.session_state['branch']:
-    # СТАРТОВАЯ СТРАНИЦА — КОМПАКТНАЯ
+ if not st.session_state['branch']:
+    # СТАРТОВАЯ СТРАНИЦА — НА ВЕСЬ ЭКРАН
     st.markdown("""
     <div class="main-header">
         <div>
-            <h1 style="margin: 0;">🤖 Совет ИИ</h1>
-            <p style="margin: 5px 0 0 0; font-size: 0.9rem; opacity: 0.85;">Три разума. Одна задача. Идеальный результат.</p>
+            <h1 style="margin: 0;"> Совет ИИ</h1>
+            <p style="margin: 10px 0 0 0; font-size: 1.1rem; opacity: 0.85;">Три разума. Одна задача. Идеальный результат.</p>
         </div>
-        <p style="margin: 0; font-size: 0.85rem; opacity: 0.75; max-width: 400px; text-align: right;">
-            Выбери направление работы. В каждой ветви свои проекты, беседы и инструменты.
+        <p style="margin: 0; font-size: 1rem; opacity: 0.75; max-width: 450px; text-align: right; line-height: 1.6;">
+            Выбери направление работы.<br>
+            В каждой ветви свои проекты, беседы и инструменты.
         </p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Ветви в одну строку
+    # Ветви в одну строку — на всю ширину
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("""
         <div class="branch-card branch-science">
-            <h3 style="margin: 0 0 8px 0; font-size: 1.2rem;">🎓 Научная ветвь</h3>
-            <p style="color: rgba(255,255,255,0.75); margin: 0 0 8px 0; font-size: 0.85rem;">
-                Статьи, диссертации, обзоры
-            </p>
-            <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem; line-height: 1.5;">
-                ✅ КиберЛенинка, OpenAlex<br>
-                ✅ Научная библиотека<br>
-                ✅ Научная структура
+            <div>
+                <h3 style="margin: 0 0 15px 0; font-size: 1.8rem;">🎓 Научная ветвь</h3>
+                <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 1.05rem;">
+                    Научные статьи, диссертации, обзоры литературы
+                </p>
+                <div style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 2;">
+                    ✅ Научный поиск (КиберЛенинка, OpenAlex, Semantic Scholar)<br>
+                    ✅ Моя научная библиотека<br>
+                    ✅ Структура: Введение → Обзор → Методология → Выводы → Список литературы
+                </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("🚀 Научная ветвь", key="btn_science", use_container_width=True):
+        if st.button("🚀 НАУЧНАЯ ВЕТВЬ", key="btn_science", use_container_width=True):
             st.session_state['branch'] = 'science'
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
@@ -1054,18 +1084,20 @@ if not st.session_state['branch']:
     with col2:
         st.markdown("""
         <div class="branch-card branch-legal">
-            <h3 style="margin: 0 0 8px 0; font-size: 1.2rem;">⚖️ Юридическая ветвь</h3>
-            <p style="color: rgba(255,255,255,0.75); margin: 0 0 8px 0; font-size: 0.85rem;">
-                Договоры, иски, претензии
-            </p>
-            <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem; line-height: 1.5;">
-                ✅ Cognevia, ПравоТех<br>
-                ✅ Юридический стиль<br>
-                ✅ Нормы права РФ
+            <div>
+                <h3 style="margin: 0 0 15px 0; font-size: 1.8rem;">⚖️ Юридическая ветвь</h3>
+                <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 1.05rem;">
+                    Договоры, иски, претензии, жалобы, письма
+                </p>
+                <div style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 2;">
+                    ✅ Мнение внешнего ИИ (Cognevia, ПравоТех, Doczilla)<br>
+                    ✅ Строгий юридический стиль<br>
+                    ✅ Ссылки на нормы права и судебную практику РФ
+                </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("⚖️ Юридическая ветвь", key="btn_legal", use_container_width=True):
+        if st.button("️ ЮРИДИЧЕСКАЯ ВЕТВЬ", key="btn_legal", use_container_width=True):
             st.session_state['branch'] = 'legal'
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
@@ -1074,18 +1106,20 @@ if not st.session_state['branch']:
     with col3:
         st.markdown("""
         <div class="branch-card branch-business">
-            <h3 style="margin: 0 0 8px 0; font-size: 1.2rem;">💼 Бизнес-финансовая ветвь</h3>
-            <p style="color: rgba(255,255,255,0.75); margin: 0 0 8px 0; font-size: 0.85rem;">
-                Бизнес-планы, анализ выписок
-            </p>
-            <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem; line-height: 1.5;">
-                ✅ Анализ банковских выписок<br>
-                ✅ Генератор бизнес-планов<br>
-                ✅ ЦБ РФ и Yahoo Finance
+            <div>
+                <h3 style="margin: 0 0 15px 0; font-size: 1.8rem;">💼 Бизнес-финансовая ветвь</h3>
+                <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 1.05rem;">
+                    Бизнес-планы, финансовые отчёты, анализ выписок
+                </p>
+                <div style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 2;">
+                    ✅ Анализ банковских выписок и поиск причин убытков<br>
+                    ✅ Генератор бизнес-планов с финансовой моделью<br>
+                    ✅ Актуальные данные ЦБ РФ и Yahoo Finance
+                </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("💼 Бизнес-финансовая ветвь", key="btn_business", use_container_width=True):
+        if st.button("💼 БИЗНЕС-ФИНАНСОВАЯ ВЕТВЬ", key="btn_business", use_container_width=True):
             st.session_state['branch'] = 'business'
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
