@@ -981,34 +981,82 @@ if st.session_state['open_entry']:
         st.session_state['open_entry'] = None
 
 if not st.session_state['branch']:
-    st.markdown("""<div class="ai-card"><h3 style="margin: 0; color: #8B5E3C;">🤖 Совет ИИ</h3>
-    <p style="margin: 10px 0 0 0; color: #A89F91;">Выбери направление работы. В каждой ветви свои проекты, беседы и инструменты.</p></div>""", unsafe_allow_html=True)
+   if not st.session_state['branch']:
+    # СТАРТОВАЯ СТРАНИЦА С ФОНОВЫМ ИЗОБРАЖЕНИЕМ
+    st.markdown("""
+    <div class="main-header">
+        <h1>🤖 Совет ИИ</h1>
+        <p>Три разума. Одна задача. Идеальный результат.</p>
+        <p style="font-size: 1rem; margin-top: 20px; opacity: 0.8;">
+            Выбери направление работы. В каждой ветви свои проекты, беседы и инструменты.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.markdown("---")
+    
     col1, col2, col3 = st.columns(3)
+    
     with col1:
-        st.markdown("""<div class="branch-card branch-science">
-            <h3 style="color: #9B59B6; margin: 0 0 10px 0;">🎓 Научная ветвь</h3>
-            <p style="color: #666; margin: 0 0 15px 0;">Научные статьи, диссертации, обзоры</p>
-            <p style="color: #888; font-size: 0.9em; margin: 0;">✅ Научный поиск<br>✅ Библиотека<br>✅ Научная структура</p>
-        </div>""", unsafe_allow_html=True)
-        if st.button("🎓 Научная ветвь", key="btn_science", use_container_width=True):
-            st.session_state['branch'] = 'science'; st.session_state['selected_project'] = None; st.session_state['show_new_chat'] = False; st.rerun()
+        st.markdown("""
+        <div class="branch-card branch-science glow-effect">
+            <h3 style="margin: 0 0 15px 0; font-size: 1.8rem;">🎓 Научная ветвь</h3>
+            <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 1.1rem;">
+                Научные статьи, диссертации, обзоры литературы
+            </p>
+            <div style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 1.8;">
+                ✅ Научный поиск (КиберЛенинка, OpenAlex, Semantic Scholar)<br>
+                ✅ Моя научная библиотека<br>
+                ✅ Структура: Введение → Обзор → Методология → Выводы
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("🚀 Научная ветвь", key="btn_science", use_container_width=True):
+            st.session_state['branch'] = 'science'
+            st.session_state['selected_project'] = None
+            st.session_state['show_new_chat'] = False
+            st.rerun()
+    
     with col2:
-        st.markdown("""<div class="branch-card branch-legal">
-            <h3 style="color: #2C3E50; margin: 0 0 10px 0;">⚖️ Юридическая ветвь</h3>
-            <p style="color: #666; margin: 0 0 15px 0;">Договоры, иски, претензии, жалобы</p>
-            <p style="color: #888; font-size: 0.9em; margin: 0;">✅ Мнение Cognevia/ПравоТех<br>✅ Юридический стиль<br>✅ Нормы права</p>
-        </div>""", unsafe_allow_html=True)
-        if st.button("⚖️ Юридическая ветвь", key="btn_legal", use_container_width=True):
-            st.session_state['branch'] = 'legal'; st.session_state['selected_project'] = None; st.session_state['show_new_chat'] = False; st.rerun()
+        st.markdown("""
+        <div class="branch-card branch-legal glow-effect">
+            <h3 style="margin: 0 0 15px 0; font-size: 1.8rem;">⚖️ Юридическая ветвь</h3>
+            <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 1.1rem;">
+                Договоры, иски, претензии, жалобы, письма
+            </p>
+            <div style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 1.8;">
+                ✅ Мнение внешнего ИИ (Cognevia, ПравоТех)<br>
+                ✅ Строгий юридический стиль<br>
+                ✅ Ссылки на нормы права и судебную практику
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button(" Юридическая ветвь", key="btn_legal", use_container_width=True):
+            st.session_state['branch'] = 'legal'
+            st.session_state['selected_project'] = None
+            st.session_state['show_new_chat'] = False
+            st.rerun()
+    
     with col3:
-        st.markdown("""<div class="branch-card branch-business">
-            <h3 style="color: #27AE60; margin: 0 0 10px 0;">💼 Бизнес-финансовая ветвь</h3>
-            <p style="color: #666; margin: 0 0 15px 0;">Бизнес-планы, финмодели, анализ выписок</p>
-            <p style="color: #888; font-size: 0.9em; margin: 0;">✅ Анализ банковских выписок<br>✅ Генератор бизнес-планов<br>✅ ЦБ РФ и Yahoo Finance</p>
-        </div>""", unsafe_allow_html=True)
-        if st.button("💼 Бизнес-финансовая ветвь", key="btn_business", use_container_width=True):
-            st.session_state['branch'] = 'business'; st.session_state['selected_project'] = None; st.session_state['show_new_chat'] = False; st.rerun()
+        st.markdown("""
+        <div class="branch-card branch-business glow-effect">
+            <h3 style="margin: 0 0 15px 0; font-size: 1.8rem;"> Бизнес-финансовая ветвь</h3>
+            <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 1.1rem;">
+                Бизнес-планы, финансовые отчёты, анализ выписок
+            </p>
+            <div style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 1.8;">
+                ✅ Анализ банковских выписок<br>
+                ✅ Генератор бизнес-планов<br>
+                ✅ ЦБ РФ и Yahoo Finance
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button(" Бизнес-финансовая ветвь", key="btn_business", use_container_width=True):
+            st.session_state['branch'] = 'business'
+            st.session_state['selected_project'] = None
+            st.session_state['show_new_chat'] = False
+            st.rerun()
+    
     st.stop()
 
 # === РАБОТА ВНУТРИ ВЕТВИ ===
