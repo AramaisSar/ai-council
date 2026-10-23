@@ -187,10 +187,12 @@ st.markdown("""
     transition: all 0.4s ease !important;
     position: relative;
     overflow: hidden;
-    height: 320px !important;
+    height: 280px !important;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: space-between !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
 }
 
 .branch-card::before {
@@ -229,9 +231,9 @@ st.markdown("""
     background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
 }
 
-.branch-science h3 { color: #B388FF !important; text-shadow: 0 0 20px rgba(179, 136, 255, 0.5) !important; }
-.branch-legal h3 { color: #00D9FF !important; text-shadow: 0 0 20px rgba(0, 217, 255, 0.5) !important; }
-.branch-business h3 { color: #00FF88 !important; text-shadow: 0 0 20px rgba(0, 255, 136, 0.5) !important; }
+.branch-science h3 { color: #B388FF !important; text-shadow: 0 0 25px rgba(179, 136, 255, 0.6) !important; }
+.branch-legal h3 { color: #00D9FF !important; text-shadow: 0 0 25px rgba(0, 217, 255, 0.6) !important; }
+.branch-business h3 { color: #00FF88 !important; text-shadow: 0 0 25px rgba(0, 255, 136, 0.6) !important; }
     
     .branch-card::before {
         content: '';
@@ -1062,11 +1064,11 @@ if st.session_state['open_entry']:
 
 if not st.session_state['branch']:
  if not st.session_state['branch']:
-    # СТАРТОВАЯ СТРАНИЦА — НА ВЕСЬ ЭКРАН
+    # СТАРТОВАЯ СТРАНИЦА — МИНИМАЛИЗМ
     st.markdown("""
     <div class="main-header">
         <div>
-            <h1 style="margin: 0;"> Совет ИИ</h1>
+            <h1 style="margin: 0;">🤖 Совет ИИ</h1>
             <p style="margin: 10px 0 0 0; font-size: 1.1rem; opacity: 0.85;">Три разума. Одна задача. Идеальный результат.</p>
         </div>
         <p style="margin: 0; font-size: 1rem; opacity: 0.75; max-width: 450px; text-align: right; line-height: 1.6;">
@@ -1076,23 +1078,12 @@ if not st.session_state['branch']:
     </div>
     """, unsafe_allow_html=True)
     
-    # Ветви в одну строку — на всю ширину
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("""
         <div class="branch-card branch-science">
-            <div>
-                <h3 style="margin: 0 0 15px 0; font-size: 1.8rem;">🎓 Научная ветвь</h3>
-                <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 1.05rem;">
-                    Научные статьи, диссертации, обзоры литературы
-                </p>
-                <div style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 2;">
-                    ✅ Научный поиск (КиберЛенинка, OpenAlex, Semantic Scholar)<br>
-                    ✅ Моя научная библиотека<br>
-                    ✅ Структура: Введение → Обзор → Методология → Выводы → Список литературы
-                </div>
-            </div>
+            <h3 style="margin: 0; font-size: 2.2rem;">🎓 Научная ветвь</h3>
         </div>
         """, unsafe_allow_html=True)
         if st.button("🚀 НАУЧНАЯ ВЕТВЬ", key="btn_science", use_container_width=True):
@@ -1104,20 +1095,10 @@ if not st.session_state['branch']:
     with col2:
         st.markdown("""
         <div class="branch-card branch-legal">
-            <div>
-                <h3 style="margin: 0 0 15px 0; font-size: 1.8rem;">⚖️ Юридическая ветвь</h3>
-                <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 1.05rem;">
-                    Договоры, иски, претензии, жалобы, письма
-                </p>
-                <div style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 2;">
-                    ✅ Мнение внешнего ИИ (Cognevia, ПравоТех, Doczilla)<br>
-                    ✅ Строгий юридический стиль<br>
-                    ✅ Ссылки на нормы права и судебную практику РФ
-                </div>
-            </div>
+            <h3 style="margin: 0; font-size: 2.2rem;">⚖️ Юридическая ветвь</h3>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("️ ЮРИДИЧЕСКАЯ ВЕТВЬ", key="btn_legal", use_container_width=True):
+        if st.button("⚖️ ЮРИДИЧЕСКАЯ ВЕТВЬ", key="btn_legal", use_container_width=True):
             st.session_state['branch'] = 'legal'
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
@@ -1126,17 +1107,7 @@ if not st.session_state['branch']:
     with col3:
         st.markdown("""
         <div class="branch-card branch-business">
-            <div>
-                <h3 style="margin: 0 0 15px 0; font-size: 1.8rem;">💼 Бизнес-финансовая ветвь</h3>
-                <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 1.05rem;">
-                    Бизнес-планы, финансовые отчёты, анализ выписок
-                </p>
-                <div style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 2;">
-                    ✅ Анализ банковских выписок и поиск причин убытков<br>
-                    ✅ Генератор бизнес-планов с финансовой моделью<br>
-                    ✅ Актуальные данные ЦБ РФ и Yahoo Finance
-                </div>
-            </div>
+            <h3 style="margin: 0; font-size: 2.2rem;">💼 Бизнес-финансовая ветвь</h3>
         </div>
         """, unsafe_allow_html=True)
         if st.button("💼 БИЗНЕС-ФИНАНСОВАЯ ВЕТВЬ", key="btn_business", use_container_width=True):
