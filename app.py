@@ -1113,7 +1113,104 @@ with col2:
                     final = ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
                 st.markdown("""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️ ✅ Финал от Qwen</h3></div>""", unsafe_allow_html=True)
                 st.write(final)
+                                # === КНОПКИ СКАЧИВАНИЯ ===
+                st.markdown("---")
+                st.markdown("""<div class="ai-card" style="background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%); color: white; text-align: center;">
+                    <h3 style="margin: 0; color: white;">✅ Задача выполнена!</h3>
+                    <p style="margin: 10px 0 0 0; opacity: 0.9;">Выбери, что скачать:</p>
+                </div>""", unsafe_allow_html=True)
                 
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    # Скачивание ТОЛЬКО финального документа
+                    final_doc = docx.Document()
+                    final_doc.add_heading(task[:100], level=1)
+                    final_doc.add_paragraph(final)
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+                        final_doc.save(tmp.name); final_path = tmp.name
+                    with open(final_path, "rb") as f:
+                        st.download_button(
+                            label="📄 Скачать готовый документ",
+                            data=f,
+                            file_name=f"Готовый_документ_{datetime.now().strftime('%d%m%Y_%H%M')}.docx",
+                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            use_container_width=True
+                        )
+                    os.remove(final_path)
+                
+                with col2:
+                    # Скачивание ПОЛНОЙ беседы
+                    full_doc = docx.Document()
+                    full_doc.add_heading(f'Задача ({branch_names[branch]}):', level=1)
+                    full_doc.add_paragraph(task)
+                    if file_name: full_doc.add_heading('Файл:', level=2); full_doc.add_paragraph(file_name)
+                    full_doc.add_heading('1. Черновик от ChatGPT', level=2); full_doc.add_paragraph(draft)
+                    full_doc.add_heading('2. Критика от Claude', level=2); full_doc.add_paragraph(critique)
+                    full_doc.add_heading('3. Финальный результат от Qwen', level=2); full_doc.add_paragraph(final)
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+                        full_doc.save(tmp.name); full_path = tmp.name
+                    with open(full_path, "rb") as f:
+                        st.download_button(
+                            label="📚 Скачать полную беседу",
+                            data=f,
+                            file_name=f"Полная_беседа_{datetime.now().strftime('%d%m%Y_%H%M')}.docx",
+                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            use_container_width=True
+                        )
+                    os.remove(full_path)
+                
+                # Для бизнес-ветви — дополнительная кнопка Excel
+                if branch == 'business':
+                    st.markdown("---")
+                    st.markdown("""<div class="ai-card" style="border-left: 5px solid #27AE60;"><h3 style="margin: 0 0 10px 0; color: #27AE60;">📊 Скачать в Excel (для бизнес-анализа)</h3>
+                    <p style="margin: 0; color: #A89F91;">Структурированный отчёт с разделами.</p></div>""", unsafe_allow_html=True)
+                    
+                    excel_wb = openpyxl.Workbook()
+                    ws = excel_wb.active
+                    ws.title = "Готовый документ"
+                    ws['A1'] = "ЗАДАЧА:"
+                    ws['A1'].font = Font(bold=True, size=12)
+                    ws['A2'] = task
+                    ws['A4'] = "ФИНАЛЬНЫЙ РЕЗУЛЬТАТ:"
+                    ws['A4'].font = Font(bold=True, size=12, color="FFFFFF")
+                    ws['A4'].fill = PatternFill(start_color="27AE60", end_color="27AE60", fill_type="solid")
+                    # Разбиваем финал на параграфы
+                    final_lines = final.split('\n')
+                    row = 5
+                    for line in final_lines:
+                        ws[f'A{row}'] = line
+                        row += 1
+                    # Ширина столбца
+                    ws.column_dimensions['A'].width = 100
+                    
+                    # Лист с черновиком
+                    ws2 = excel_wb.create_sheet("Черновик ChatGPT")
+                    ws2['A1'] = "ЧЕРНОВИК:"
+                    ws2['A1'].font = Font(bold=True, size=12)
+                    for i, line in enumerate(draft.split('\n'), 2):
+                        ws2[f'A{i}'] = line
+                    ws2.column_dimensions['A'].width = 100
+                    
+                    # Лист с критикой
+                    ws3 = excel_wb.create_sheet("Критика Claude")
+                    ws3['A1'] = "КРИТИКА:"
+                    ws3['A1'].font = Font(bold=True, size=12)
+                    for i, line in enumerate(critique.split('\n'), 2):
+                        ws3[f'A{i}'] = line
+                    ws3.column_dimensions['A'].width = 100
+                    
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+                        excel_wb.save(tmp.name); excel_path = tmp.name
+                    with open(excel_path, "rb") as f:
+                        st.download_button(
+                            label="📊 Скачать структурированный Excel",
+                            data=f,
+                            file_name=f"Бизнес_отчёт_{datetime.now().strftime('%d%m%Y_%H%M')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True
+                        )
+                    os.remove(excel_path)
                 doc = docx.Document()
                 doc.add_heading(f'Задача ({branch_names[branch]}):', level=1)
                 doc.add_paragraph(task)
