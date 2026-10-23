@@ -187,10 +187,10 @@ st.markdown("""
     transition: all 0.4s ease !important;
     position: relative;
     overflow: hidden;
-    min-height: 280px !important;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    height: 320px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
 }
 
 .branch-card::before {
@@ -346,6 +346,26 @@ st.markdown("""
     .glow-effect {
         animation: glow 2s ease-in-out infinite;
     }
+/* Выравнивание колонок Streamlit */
+[data-testid="column"] {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+[data-testid="column"] > div {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Кнопки прижаты к низу */
+[data-testid="column"] .stButton {
+    margin-top: auto !important;
+}
+
+[data-testid="column"] .stButton button {
+    width: 100% !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
