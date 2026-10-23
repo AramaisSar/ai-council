@@ -1113,19 +1113,29 @@ with col2:
                     final = ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
                 st.markdown("""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️ ✅ Финал от Qwen</h3></div>""", unsafe_allow_html=True)
                 st.write(final)
-                                # === КНОПКИ СКАЧИВАНИЯ ===
+                                           # === КНОПКИ СКАЧИВАНИЯ ===
                 st.markdown("---")
                 st.markdown("""<div class="ai-card" style="background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%); color: white; text-align: center;">
                     <h3 style="margin: 0; color: white;">✅ Задача выполнена!</h3>
                     <p style="margin: 10px 0 0 0; opacity: 0.9;">Выбери, что скачать:</p>
                 </div>""", unsafe_allow_html=True)
                 
+                # Формируем имя файла из задачи
+                safe_task = task[:60].strip()
+                # Удаляем запрещённые символы для имён файлов
+                for char in ['/', '\\', ':', '*', '?', '"', '<', '>', '|', '\n', '\r']:
+                    safe_task = safe_task.replace(char, '')
+                safe_task = safe_task.replace('  ', ' ').strip()
+                if not safe_task:
+                    safe_task = "Документ"
+                date_str = datetime.now().strftime('%d%m%Y')
+                
                 col1, col2 = st.columns(2)
                 
                 with col1:
                     # Скачивание ТОЛЬКО финального документа
                     final_doc = docx.Document()
-                    final_doc.add_heading(task[:100], level=1)
+                    final_doc.add_heading(task, level=1)
                     final_doc.add_paragraph(final)
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
                         final_doc.save(tmp.name); final_path = tmp.name
@@ -1133,7 +1143,7 @@ with col2:
                         st.download_button(
                             label="📄 Скачать готовый документ",
                             data=f,
-                            file_name=f"Готовый_документ_{datetime.now().strftime('%d%m%Y_%H%M')}.docx",
+                            file_name=f"{safe_task}_{date_str}.docx",
                             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                             use_container_width=True
                         )
@@ -1154,7 +1164,7 @@ with col2:
                         st.download_button(
                             label="📚 Скачать полную беседу",
                             data=f,
-                            file_name=f"Полная_беседа_{datetime.now().strftime('%d%m%Y_%H%M')}.docx",
+                            file_name=f"Беседа_{safe_task}_{date_str}.docx",
                             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                             use_container_width=True
                         )
