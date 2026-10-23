@@ -167,19 +167,45 @@ st.markdown("""
     
     .book-item { border-left-color: #B388FF !important; }
     
-   .branch-card {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border-radius: 16px !important;
-    padding: 20px !important;
-    margin: 10px 0 !important;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important;
-    backdrop-filter: blur(15px) !important;
-    border: 2px solid rgba(0, 217, 255, 0.3) !important;
+  .branch-card {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    padding: 15px 20px !important;
+    margin: 0 8px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(0, 217, 255, 0.2) !important;
     cursor: pointer !important;
-    transition: all 0.4s ease !important;
+    transition: all 0.3s ease !important;
     position: relative;
     overflow: hidden;
+    min-height: auto !important;
 }
+
+.branch-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 30px rgba(0, 217, 255, 0.25) !important;
+    border-color: rgba(0, 217, 255, 0.5) !important;
+}
+
+.branch-science { 
+    border-left: 4px solid #B388FF !important;
+    background: linear-gradient(90deg, rgba(179, 136, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+}
+
+.branch-legal { 
+    border-left: 4px solid #00D9FF !important;
+    background: linear-gradient(90deg, rgba(0, 217, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+}
+
+.branch-business { 
+    border-left: 4px solid #00FF88 !important;
+    background: linear-gradient(90deg, rgba(0, 255, 136, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+}
+
+.branch-science h3 { color: #B388FF !important; text-shadow: 0 0 15px rgba(179, 136, 255, 0.4) !important; }
+.branch-legal h3 { color: #00D9FF !important; text-shadow: 0 0 15px rgba(0, 217, 255, 0.4) !important; }
+.branch-business h3 { color: #00FF88 !important; text-shadow: 0 0 15px rgba(0, 255, 136, 0.4) !important; }
     
     .branch-card::before {
         content: '';
@@ -228,30 +254,37 @@ st.markdown("""
     }
     
     /* Стили для фонового изображения на главной */
-    .main-header {
-    background: linear-gradient(rgba(15, 12, 41, 0.7), rgba(48, 43, 99, 0.7)), 
+   .main-header {
+    background: linear-gradient(90deg, rgba(15, 12, 41, 0.85) 0%, rgba(48, 43, 99, 0.75) 100%), 
                 url('https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1920&q=80') center/cover;
-    border-radius: 16px;
-    padding: 20px 30px;
-    margin: 10px 0;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-    border: 2px solid rgba(0, 217, 255, 0.3);
+    border-radius: 12px;
+    padding: 15px 25px;
+    margin: 0 0 15px 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 217, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
 }
-    
-    .main-header h1 {
-        font-size: 2.2rem !important;
-        margin-bottom: 20px !important;
-        background: linear-gradient(135deg, #00D9FF 0%, #B388FF 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    
-    .main-header p {
-        font-size: 1.3rem !important;
-        color: rgba(255, 255, 255, 0.9) !important;
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    }
+
+.main-header h1 {
+    font-size: 1.6rem !important;
+    margin: 0 !important;
+    background: linear-gradient(135deg, #00D9FF 0%, #B388FF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    white-space: nowrap;
+}
+
+.main-header p {
+    font-size: 0.95rem !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    margin: 0 !important;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+}
     
     /* Неоновые эффекты для кнопок */
     .neon-button {
@@ -981,33 +1014,34 @@ if st.session_state['open_entry']:
         st.session_state['open_entry'] = None
 
 if not st.session_state['branch']:
-   if not st.session_state['branch']:
-    # СТАРТОВАЯ СТРАНИЦА С ФОНОВЫМ ИЗОБРАЖЕНИЕМ
+  if not st.session_state['branch']:
+    # СТАРТОВАЯ СТРАНИЦА — КОМПАКТНАЯ
     st.markdown("""
     <div class="main-header">
-        <h1>🤖 Совет ИИ</h1>
-        <p>Три разума. Одна задача. Идеальный результат.</p>
-        <p style="font-size: 1rem; margin-top: 20px; opacity: 0.8;">
+        <div>
+            <h1 style="margin: 0;">🤖 Совет ИИ</h1>
+            <p style="margin: 5px 0 0 0; font-size: 0.9rem; opacity: 0.85;">Три разума. Одна задача. Идеальный результат.</p>
+        </div>
+        <p style="margin: 0; font-size: 0.85rem; opacity: 0.75; max-width: 400px; text-align: right;">
             Выбери направление работы. В каждой ветви свои проекты, беседы и инструменты.
         </p>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("---")
-    
+    # Ветви в одну строку
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("""
-        <div class="branch-card branch-science glow-effect">
-            <h3 style="margin: 0 0 15px 0; font-size: 1.4rem;">🎓 Научная ветвь</h3>
-            <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 0.9rem;">
-                Научные статьи, диссертации, обзоры литературы
+        <div class="branch-card branch-science">
+            <h3 style="margin: 0 0 8px 0; font-size: 1.2rem;">🎓 Научная ветвь</h3>
+            <p style="color: rgba(255,255,255,0.75); margin: 0 0 8px 0; font-size: 0.85rem;">
+                Статьи, диссертации, обзоры
             </p>
-            <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem; line-height: 1.8;">
-                ✅ Научный поиск (КиберЛенинка, OpenAlex, Semantic Scholar)<br>
-                ✅ Моя научная библиотека<br>
-                ✅ Структура: Введение → Обзор → Методология → Выводы
+            <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem; line-height: 1.5;">
+                ✅ КиберЛенинка, OpenAlex<br>
+                ✅ Научная библиотека<br>
+                ✅ Научная структура
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1019,19 +1053,19 @@ if not st.session_state['branch']:
     
     with col2:
         st.markdown("""
-        <div class="branch-card branch-legal glow-effect">
-            <h3 style="margin: 0 0 15px 0; font-size: 1.8rem;">⚖️ Юридическая ветвь</h3>
-            <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 1.1rem;">
-                Договоры, иски, претензии, жалобы, письма
+        <div class="branch-card branch-legal">
+            <h3 style="margin: 0 0 8px 0; font-size: 1.2rem;">⚖️ Юридическая ветвь</h3>
+            <p style="color: rgba(255,255,255,0.75); margin: 0 0 8px 0; font-size: 0.85rem;">
+                Договоры, иски, претензии
             </p>
-            <div style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 1.8;">
-                ✅ Мнение внешнего ИИ (Cognevia, ПравоТех)<br>
-                ✅ Строгий юридический стиль<br>
-                ✅ Ссылки на нормы права и судебную практику
+            <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem; line-height: 1.5;">
+                ✅ Cognevia, ПравоТех<br>
+                ✅ Юридический стиль<br>
+                ✅ Нормы права РФ
             </div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button(" Юридическая ветвь", key="btn_legal", use_container_width=True):
+        if st.button("⚖️ Юридическая ветвь", key="btn_legal", use_container_width=True):
             st.session_state['branch'] = 'legal'
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
@@ -1039,26 +1073,25 @@ if not st.session_state['branch']:
     
     with col3:
         st.markdown("""
-        <div class="branch-card branch-business glow-effect">
-            <h3 style="margin: 0 0 15px 0; font-size: 1.8rem;"> Бизнес-финансовая ветвь</h3>
-            <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 1.1rem;">
-                Бизнес-планы, финансовые отчёты, анализ выписок
+        <div class="branch-card branch-business">
+            <h3 style="margin: 0 0 8px 0; font-size: 1.2rem;">💼 Бизнес-финансовая ветвь</h3>
+            <p style="color: rgba(255,255,255,0.75); margin: 0 0 8px 0; font-size: 0.85rem;">
+                Бизнес-планы, анализ выписок
             </p>
-            <div style="color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 1.8;">
+            <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem; line-height: 1.5;">
                 ✅ Анализ банковских выписок<br>
                 ✅ Генератор бизнес-планов<br>
                 ✅ ЦБ РФ и Yahoo Finance
             </div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button(" Бизнес-финансовая ветвь", key="btn_business", use_container_width=True):
+        if st.button("💼 Бизнес-финансовая ветвь", key="btn_business", use_container_width=True):
             st.session_state['branch'] = 'business'
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
             st.rerun()
     
     st.stop()
-
 # === РАБОТА ВНУТРИ ВЕТВИ ===
 branch = st.session_state['branch']
 branch_names = {'science': '🎓 Научная ветвь', 'legal': '⚖️ Юридическая ветвь', 'business': '💼 Бизнес-финансовая ветвь'}
