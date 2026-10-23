@@ -5,6 +5,7 @@ import docx
 import json
 import os
 import tempfile
+import base64
 from datetime import datetime
 import uuid
 
@@ -13,7 +14,7 @@ KEY_FILE = "key.txt"
 HISTORY_FILE = "history.json"
 PROJECTS_FILE = "projects.json"
 BASE_URL = "https://api.vsegpt.ru/v1"
-MODEL_CHATGPT = "openai/gpt-4o-mini"
+MODEL_CHATGPT = "openai/gpt-4o-mini" # Для картинок лучше использовать gpt-4o, если есть в агрегаторе, но и mini справится
 MODEL_CLAUDE  = "anthropic/claude-3-5-haiku"
 MODEL_QWEN    = "qwen/qwen-plus"
 MAX_FILE_SIZE = 50000 
@@ -54,7 +55,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.set_page_config(page_title="Совет ИИ", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="Совет ИИ", page_icon="", layout="wide")
 
 st.markdown("""
 <div style="text-align: center; margin-bottom: 40px; margin-top: 20px;">
@@ -118,7 +119,7 @@ def extract_text(file):
     elif filename.endswith('.docx'):
         doc = docx.Document(file)
         return "".join([p.text + "\n" for p in doc.paragraphs])
-    else: raise Exception("Неподдерживаемый формат. Используй PDF, DOCX или TXT.")
+    else: raise Exception("Неподдерживаемый формат.")
 
 def ask(model, prompt):
     key = load_key()
@@ -126,8 +127,34 @@ def ask(model, prompt):
     client = OpenAI(api_key=key, base_url=BASE_URL)
     return client.chat.completions.create(model=model, messages=[{"role": "user", "content": prompt}], temperature=0.3).choices[0].message.content
 
+def analyze_image(file):
+    """Распознает текст и описывает содержимое изображения через GPT-4o"""
+    key = load_key()
+    if not key: raise Exception("Не найден файл key.txt или секрет API_KEY")
+    
+    image_bytes = file.read()
+    base64_image = base64.b64encode(image_bytes).decode('utf-8')
+    filename = file.name.lower()
+    mime = "image/jpeg" if filename.endswith(('.jpg', '.jpeg')) else "image/png"
+    
+    client = OpenAI(api_key=key, base_url=BASE_URL)
+    response = client.chat.completions.create(
+        model=MODEL_CHATGPT, # Используем GPT-4o-mini (или gpt-4o, если доступен) для зрения
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Ты — система оптического распознавания символов (OCR) и визуальный аналитик. Твоя задача: 1. Распознать ВЕСЬ текст на изображении и вывести его дословно. 2. Описать визуальные элементы (таблицы, схемы, подписи, рукописные пометки, печати), если они есть. Верни результат в виде структурированного текста. Если текста нет, просто опиши, что на картинке."},
+                    {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{base64_image}"}}
+                ]
+            }
+        ],
+        max_tokens=2000
+    )
+    return response.choices[0].message.content
+
 # --- ИНТЕРФЕЙС ---
-st.sidebar.header(" Проекты")
+st.sidebar.header("📁 Проекты")
 projects = load_projects()
 
 with st.sidebar.expander("➕ Новый проект"):
@@ -156,30 +183,30 @@ else:
 st.sidebar.markdown("---")
 
 if selected_project:
-    st.sidebar.header(f" История: {selected_project['name']}")
+    st.sidebar.header(f"📂 История: {selected_project['name']}")
     history = load_history()
     project_history = [h for h in history if h.get("project_id") == selected_project["id"]]
     if project_history:
         st.sidebar.markdown("---")
         for i, entry in enumerate(reversed(project_history)):
             short_task = entry["task"][:40] + "..." if len(entry["task"]) > 40 else entry["task"]
-            with st.sidebar.expander(f"📝 {short_task}\n🕒 {entry['date']}"):
+            with st.sidebar.expander(f"📝 {short_task}\n {entry['date']}"):
                 st.write("**Задача:**"); st.write(entry["task"])
                 if entry.get("file"): st.write(f"**Файл:** {entry['file']}")
                 if entry.get("external_ai"): st.write(f"**Внешний ИИ:** {entry['external_ai'][:100]}...")
                 st.write("**Финальный результат:**"); st.success(entry["final"])
     else: st.sidebar.info("В этом проекте пока нет задач")
 else:
-    st.sidebar.header("📂 История задач"); st.sidebar.info("Выбери проект слева")
+    st.sidebar.header(" История задач"); st.sidebar.info("Выбери проект слева")
 
 st.sidebar.markdown("---")
 if load_key(): st.sidebar.success("🔑 Ключ активен")
 else: st.sidebar.error("❌ Ключ не найден")
 
 if selected_project:
-    st.markdown(f"""<div class="ai-card"><h3 style="margin: 0; color: #8B5E3C;"> Проект: {selected_project['name']}</h3>{f'<p style="margin: 10px 0 0 0; color: #A89F91;">{selected_project["description"]}</p>' if selected_project.get("description") else ''}</div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div class="ai-card"><h3 style="margin: 0; color: #8B5E3C;">📁 Проект: {selected_project['name']}</h3>{f'<p style="margin: 10px 0 0 0; color: #A89F91;">{selected_project["description"]}</p>' if selected_project.get("description") else ''}</div>""", unsafe_allow_html=True)
 else:
-    st.markdown("""<div class="ai-card" style="text-align: center;"><h3 style="margin: 0; color: #8B5E3C;">👈 Создай или выбери проект в боковой панели</h3></div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="ai-card" style="text-align: center;"><h3 style="margin: 0; color: #8B5E3C;"> Создай или выбери проект в боковой панели</h3></div>""", unsafe_allow_html=True)
 
 st.markdown("---")
 col1, col2, col3 = st.columns([1, 2, 1])
@@ -191,28 +218,39 @@ with col2:
             except Exception as e: st.error(f"❌ {name} — ошибка: {e}")
 
 st.markdown("---")
-st.markdown("""<div class="ai-card"><h3 style="margin: 0 0 10px 0; color: #8B5E3C;">📎 Загрузи материалы (необязательно)</h3><p style="margin: 0; color: #A89F91;"> Модели будут СТРОГО следовать загруженному тексту и не станут выдумывать.</p></div>""", unsafe_allow_html=True)
+st.markdown("""<div class="ai-card"><h3 style="margin: 0 0 10px 0; color: #8B5E3C;">📎 Загрузи материалы (необязательно)</h3><p style="margin: 0; color: #A89F91;">💡 Поддерживаются PDF, DOCX, TXT, а также <b>фотографии и сканы (JPG, PNG)</b>. ИИ сам распознает текст на фото.</p></div>""", unsafe_allow_html=True)
 
-uploaded_file = st.file_uploader("Выбери PDF, DOCX или TXT:", type=['pdf', 'docx', 'txt'])
+uploaded_file = st.file_uploader("Выбери PDF, DOCX, TXT или фото (JPG, PNG):", type=['pdf', 'docx', 'txt', 'jpg', 'jpeg', 'png'])
 file_text = ""; file_name = ""
 if uploaded_file is not None:
     try:
-        file_text = extract_text(uploaded_file); file_name = uploaded_file.name
-        if len(file_text) > MAX_FILE_SIZE:
-            file_text = file_text[:MAX_FILE_SIZE]; st.warning(f"⚠️ Файл большой. Взяты только первые {MAX_FILE_SIZE} символов.")
-        st.success(f"✅ Файл загружен: {file_name} ({len(file_text)} символов)")
-        with st.expander("👁 Посмотреть загруженный текст"): st.text(file_text[:2000] + "..." if len(file_text) > 2000 else file_text)
+        file_name = uploaded_file.name
+        filename_lower = file_name.lower()
+        
+        if filename_lower.endswith(('.jpg', '.jpeg', '.png')):
+            with st.spinner("👁️ Анализирую изображение (распознаю текст и схемы)..."):
+                file_text = analyze_image(uploaded_file)
+            st.success(f"✅ Изображение проанализировано: {file_name}")
+            with st.expander("👁️ Посмотреть распознанный текст и описание"):
+                st.text(file_text[:2000] + "..." if len(file_text) > 2000 else file_text)
+        else:
+            file_text = extract_text(uploaded_file)
+            if len(file_text) > MAX_FILE_SIZE:
+                file_text = file_text[:MAX_FILE_SIZE]; st.warning(f"⚠️ Файл большой. Взяты только первые {MAX_FILE_SIZE} символов.")
+            st.success(f"✅ Файл загружен: {file_name} ({len(file_text)} символов)")
+            with st.expander("👁️ Посмотреть загруженный текст"): st.text(file_text[:2000] + "..." if len(file_text) > 2000 else file_text)
+            
     except Exception as e: st.error(f"❌ Ошибка чтения файла: {e}")
 
 st.markdown("---")
 
-# === НОВОЕ ПОЛЕ: МНЕНИЕ ВНЕШНЕГО ИИ ===
-st.markdown("""<div class="ai-card card-external"><h3 style="margin: 0 0 10px 0; color: #6B9080;">⚖️ Мнение внешнего юридического ИИ (необязательно)</h3><p style="margin: 0; color: #A89F91;">💡 Вставь сюда ответ от Cognevia, ПравоТех, Doczilla или другого специализированного ИИ. Наша троица учтёт это мнение при формировании финального ответа.</p></div>""", unsafe_allow_html=True)
+# === ПОЛЕ: МНЕНИЕ ВНЕШНЕГО ИИ ===
+st.markdown("""<div class="ai-card card-external"><h3 style="margin: 0 0 10px 0; color: #6B9080;">⚖️ Мнение внешнего юридического ИИ (необязательно)</h3><p style="margin: 0; color: #A89F91;">💡 Вставь сюда ответ от Cognevia, ПравоТех, Doczilla или другого специализированного ИИ.</p></div>""", unsafe_allow_html=True)
 
 external_ai_opinion = st.text_area(
     "Вставь ответ от внешнего ИИ (Cognevia, ПравоТех, Doczilla и т.д.):",
     height=150,
-    placeholder="Например: скопируй сюда анализ судебного дела или правовую позицию от Cognevia..."
+    placeholder="Например: скопируй сюда анализ судебного дела или правовую позицию..."
 )
 
 st.markdown("---")
@@ -225,20 +263,17 @@ with col2:
         elif not task.strip(): st.warning("⚠️ Сначала введи задачу.")
         else:
             try:
-                # Формируем контекст из файла
                 if file_text:
                     context_block = f"# 📖 ИСТОЧНИК (материал)\n\n{file_text}\n\n"
                 else:
                     context_block = ""
                 
-                # Добавляем мнение внешнего ИИ
                 if external_ai_opinion.strip():
-                    external_block = f"# ⚖️ МНЕНИЕ ВНЕШНЕГО ЮРИДИЧЕСКОГО ИИ (Cognevia/ПравоТех/Doczilla)\n\n{external_ai_opinion}\n\n"
+                    external_block = f"# ⚖️ МНЕНИЕ ВНЕШНЕГО ЮРИДИЧЕСКОГО ИИ\n\n{external_ai_opinion}\n\n"
                 else:
                     external_block = ""
                 
-                # Общие инструкции
-                instructions = """# ⚠️ ВАЖНЫЕ ИНСТРУКЦИИ:
+                instructions = """# ️ ВАЖНЫЕ ИНСТРУКЦИИ:
 1. Ты работаешь с НАУЧНЫМ/ЮРИДИЧЕСКИМ материалом. Точность критически важна.
 2. Используй ТОЛЬКО информацию из предоставленных источников выше.
 3. НЕ выдумывай факты, которых нет в тексте.
@@ -252,7 +287,7 @@ with col2:
                 full_context = context_block + external_block + instructions
 
                 # ChatGPT
-                with st.spinner(" ChatGPT анализирует материалы..."):
+                with st.spinner("📝 ChatGPT анализирует материалы..."):
                     draft = ask(MODEL_CHATGPT, f"""Ты — научный/юридический ассистент. Твоя задача: подготовить ЧЕРНОВИК на основе предоставленных материалов.
 
 {full_context}
@@ -268,7 +303,7 @@ with col2:
 
 Начни с анализа источников, затем предложи структуру ответа.""")
                 
-                st.markdown(f"""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️ Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️⃣ Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
                 st.write(draft)
 
                 # Claude
@@ -292,11 +327,11 @@ with col2:
 
 Будь МАКСИМАЛЬНО строгим. Если черновик противоречит источникам — укажи это явно.""")
                 
-                st.markdown(f"""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️ Критика и проверка от Claude</h3></div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️⃣ Критика и проверка от Claude</h3></div>""", unsafe_allow_html=True)
                 st.write(critique)
 
                 # Qwen
-                with st.spinner("🎯 Qwen готовит финальную версию..."):
+                with st.spinner(" Qwen готовит финальную версию..."):
                     final = ask(MODEL_QWEN, f"""Ты — главный редактор научной/юридической работы. Твоя задача: создать ФИНАЛЬНУЮ ВЕРСИЮ, исправив все ошибки.
 
 {full_context}
@@ -315,7 +350,7 @@ with col2:
 3. ✅ Добавить цитаты и ссылки на конкретные места в источниках
 4. ✅ Сохранить структуру и логику
 5. ✅ Если чего-то не хватает в источниках — честно указать: "В источниках нет информации о..."
-6. ⚖️ Если есть мнение внешнего ИИ — интегрируй его в финальный текст, если оно корректно и подтверждено источниками
+6. ️ Если есть мнение внешнего ИИ — интегрируй его в финальный текст, если оно корректно и подтверждено источниками
 7. ✅ Оформить ответ как готовый научный/юридический материал (заголовки, списки, абзацы)
 
 Создай финальную, ПРОВЕРЕННУЮ версию.""")
@@ -333,7 +368,7 @@ with col2:
                     doc.add_paragraph(file_name)
                 
                 if external_ai_opinion.strip():
-                    doc.add_heading('Мнение внешнего ИИ (Cognevia/ПравоТех/Doczilla):', level=2)
+                    doc.add_heading('Мнение внешнего ИИ:', level=2)
                     doc.add_paragraph(external_ai_opinion)
                 
                 doc.add_heading('1. Черновик от ChatGPT', level=2)
@@ -355,7 +390,6 @@ with col2:
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     )
                 os.remove(tmp_path)
-                # --- КОНЕЦ WORD ---
 
                 entry = {
                     "project_id": selected_project["id"],
@@ -370,4 +404,4 @@ with col2:
                 save_to_history(entry)
                 st.sidebar.success("💾 Сохранено в историю проекта!")
 
-            except Exception as e: st.error(f"❌ Что-то пошло не так: {str(e)}")
+            except Exception as e: st.error(f" Что-то пошло не так: {str(e)}")
