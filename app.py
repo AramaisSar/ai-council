@@ -229,14 +229,14 @@ st.markdown("""
     
     /* Стили для фонового изображения на главной */
     .main-header {
-        background: linear-gradient(rgba(15, 12, 41, 0.7), rgba(48, 43, 99, 0.7)), 
-                    url('https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1920&q=80') center/cover;
-        border-radius: 24px;
-        padding: 60px 40px;
-        margin: 20px 0;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-        border: 2px solid rgba(0, 217, 255, 0.3);
-    }
+    background: linear-gradient(rgba(15, 12, 41, 0.7), rgba(48, 43, 99, 0.7)), 
+                url('https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1920&q=80') center/cover;
+    border-radius: 16px;
+    padding: 20px 30px;
+    margin: 10px 0;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(0, 217, 255, 0.3);
+}
     
     .main-header h1 {
         font-size: 2.2rem !important;
