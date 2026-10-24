@@ -446,63 +446,95 @@ def normalize_address(address):
         result = result.replace(short, full)
     return result
 
-def geocode_address(address):
-    """Получает координаты адреса через несколько бесплатных геокодеров"""
-    variants = [
-        address,
-        normalize_address(address),
-        address + ", Россия",
-        normalize_address(address) + ", Россия"
-    ]
-    
-    # Попытка 1: Photon (Komoot) — хорошо понимает неструктурированные адреса
-    for variant in variants:
-        try:
-            url = "https://photon.komoot.io/api/"
-            params = {'q': variant, 'limit': 1}
-            response = requests.get(url, params=params, timeout=15)
-            response.raise_for_status()
-            data = response.json()
-            features = data.get('features', [])
-            if features:
-                coords = features[0].get('geometry', {}).get('coordinates')
-                if coords:
-                    return float(coords[1]), float(coords[0])
-        except Exception:
-            continue
-    
-    # Попытка 2: Nominatim (OpenStreetMap)
-    headers = {'User-Agent': 'ai-council-grain/1.0'}
-    for variant in variants:
-        try:
-            url = "https://nominatim.openstreetmap.org/search"
-            params = {'q': variant, 'format': 'json', 'limit': 1}
-            response = requests.get(url, params=params, headers=headers, timeout=15)
-            response.raise_for_status()
-            data = response.json()
-            if data:
-                return float(data[0]['lat']), float(data[0]['lon'])
-        except Exception:
-            continue
-    
+def load_yandex_key():
+    try: return st.secrets["YANDEX_API_KEY"]
+    except Exception: pass
+    try:
+        with open("yandex_key.txt", "r", encoding="utf-8") as f: return f.read().strip()
+    except FileNotFoundError: return None
+
+def geocode_yandex(address, key):
+    try:
+        url = "https://geocode-maps.yandex.ru/1.x/"
+        params = {'apikey': key, 'geocode': address, 'format': 'json', 'results': 1}
+        response = requests.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+        members = data['response']['GeoObjectCollection']['featureMember']
+        if members:
+            pos = members[0]['GeoObject']['Point']['pos']
+            lon, lat = pos.split(' ')
+            return float(lat), float(lon), "Яндекс.Карты"
+    except Exception:
+        pass
     return None
+
+def geocode_photon(address):
+    try:
+        url = "https://photon.komoot.io/api/"
+        params = {'q': address, 'limit': 1}
+        response = requests.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+        features = data.get('features', [])
+        if features:
+            coords = features[0].get('geometry', {}).get('coordinates')
+            if coords:
+                return float(coords[1]), float(coords[0]), "Photon"
+    except Exception:
+        pass
+    return None
+
+def geocode_nominatim(address):
+    try:
+        url = "https://nominatim.openstreetmap.org/search"
+        params = {'q': address, 'format': 'json', 'limit': 1}
+        headers = {'User-Agent': 'ai-council-grain/1.0'}
+        response = requests.get(url, params=params, headers=headers, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+        if data:
+            return float(data[0]['lat']), float(data[0]['lon']), "OpenStreetMap"
+    except Exception:
+        pass
+    return None
+
+def geocode_address(address):
+    """Пробует геокодеры по очереди: Яндекс → Photon → OpenStreetMap"""
+    yandex_key = load_yandex_key()
+    variants = [address, normalize_address(address), address + ", Россия"]
+    
+    if yandex_key:
+        for variant in variants:
+            result = geocode_yandex(variant, yandex_key)
+            if result: return result
+    
+    for variant in variants:
+        result = geocode_photon(variant)
+        if result: return result
+    
+    for variant in variants:
+        result = geocode_nominatim(variant)
+        if result: return result
+    
+    return None, None, None
 
 def get_route_distance_km(addr1, addr2):
     """Считает расстояние по дороге между адресами"""
-    coord1 = geocode_address(addr1)
-    coord2 = geocode_address(addr2)
-    if not coord1 or not coord2:
-        return None, "Не удалось найти один из адресов. Проверь написание или введи км вручную."
+    lat1, lon1, src1 = geocode_address(addr1)
+    lat2, lon2, src2 = geocode_address(addr2)
+    if not lat1 or not lat2:
+        return None, "Не удалось найти один из адресов. Проверь написание или введи км вручную.", None
     try:
-        url = f"https://router.project-osrm.org/route/v1/driving/{coord1[1]},{coord1[0]};{coord2[1]},{coord2[0]}"
+        url = f"https://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}"
         response = requests.get(url, timeout=15)
         response.raise_for_status()
         data = response.json()
         if data.get('routes'):
-            return data['routes'][0]['distance'] / 1000.0, None
-        return None, "Маршрут не построен."
+            return data['routes'][0]['distance'] / 1000.0, None, f"{src1} → {src2}"
+        return None, "Маршрут не построен.", None
     except Exception as e:
-        return None, f"Ошибка маршрута: {str(e)}"
+        return None, f"Ошибка маршрута: {str(e)}", None
 # --- ФУНКЦИИ ДЛЯ ФИНАНСОВЫХ МОДЕЛЕЙ ---
 def create_financial_model(initial_investment, annual_revenue, annual_costs, growth_rate, discount_rate, years=5):
     wb = openpyxl.Workbook()
