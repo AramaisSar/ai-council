@@ -945,39 +945,47 @@ def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
 
 # --- ОТОБРАЖЕНИЕ ОТКРЫТОЙ БЕСЕДЫ ---
 def display_opened_entry(entry):
-    if not entry: return
-    # === РАБОТА ВНУТРИ ВЕТВИ ===
-branch = st.session_state['branch']
-branch_names = {'science': '🎓 Наука', 'legal': '⚖️ Юридическая практика', 'business': '💼 Бизнес-консалтинг'}
-branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60'}
+    if not entry:
+        return
+    branch = entry.get('branch', 'science')
+    branch_names = {'science': '🎓 Наука', 'legal': '⚖️ Юридическая практика', 'business': '💼 Бизнес-консалтинг'}
+    branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60'}
     
     st.markdown(f"""<div class="ai-card" style="border-left: 8px solid {branch_colors.get(branch, '#8B5E3C')};">
-        <h3 style="margin: 0; color: {branch_colors.get(branch, '#8B5E3C')};"> {entry.get('task', '')[:80]}</h3>
+        <h3 style="margin: 0; color: {branch_colors.get(branch, '#8B5E3C')};">📜 {entry.get('task', '')[:80]}</h3>
         <p style="margin: 10px 0 0 0; color: #A89F91;">{branch_names.get(branch, '')} • {entry.get('date', '')}</p>
     </div>""", unsafe_allow_html=True)
     st.markdown("---")
-    st.markdown("### 📝 Задача"); st.info(entry.get('task', ''))
-    if entry.get('file'): st.markdown(f"**📎 Файл:** {entry['file']}")
+    st.markdown("### 📝 Задача")
+    st.info(entry.get('task', ''))
+    if entry.get('file'):
+        st.markdown(f"**📎 Файл:** {entry['file']}")
     st.markdown("---")
-    st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️⃣ Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️ Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
     st.write(entry.get('draft', ''))
     st.markdown("---")
     st.markdown("""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️ Критика от Claude</h3></div>""", unsafe_allow_html=True)
     st.write(entry.get('critique', ''))
     st.markdown("---")
-    st.markdown("""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️⃣ ✅ Финал от Qwen</h3></div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️ ✅ Финал от Qwen</h3></div>""", unsafe_allow_html=True)
     st.write(entry.get('final', ''))
     st.markdown("---")
     
     doc = docx.Document()
     doc.add_heading(f'Задача ({branch_names.get(branch, "")}):', level=1)
     doc.add_paragraph(entry.get('task', ''))
-    if entry.get('file'): doc.add_heading('Файл:', level=2); doc.add_paragraph(entry['file'])
-    doc.add_heading('1. Черновик', level=2); doc.add_paragraph(entry.get('draft', ''))
-    doc.add_heading('2. Критика', level=2); doc.add_paragraph(entry.get('critique', ''))
-    doc.add_heading('3. Финал', level=2); doc.add_paragraph(entry.get('final', ''))
+    if entry.get('file'):
+        doc.add_heading('Файл:', level=2)
+        doc.add_paragraph(entry['file'])
+    doc.add_heading('1. Черновик', level=2)
+    doc.add_paragraph(entry.get('draft', ''))
+    doc.add_heading('2. Критика', level=2)
+    doc.add_paragraph(entry.get('critique', ''))
+    doc.add_heading('3. Финал', level=2)
+    doc.add_paragraph(entry.get('final', ''))
     with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
-        doc.save(tmp.name); tmp_path = tmp.name
+        doc.save(tmp.name)
+        tmp_path = tmp.name
     with open(tmp_path, "rb") as f:
         st.download_button(label="📥 Скачать в Word", data=f,
             file_name=f"Беседа_{entry.get('id', '')[:6]}_{datetime.now().strftime('%d%m%Y')}.docx",
