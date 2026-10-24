@@ -948,7 +948,7 @@ def display_opened_entry(entry):
     if not entry: return
     branch = entry.get('branch', 'science')
 branch_names = {'science': '🎓 Наука', 'legal': '⚖️ Юридическая практика', 'business': '💼 Бизнес-консалтинг'}
-        branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60'}
+branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60'}
     
     st.markdown(f"""<div class="ai-card" style="border-left: 8px solid {branch_colors.get(branch, '#8B5E3C')};">
         <h3 style="margin: 0; color: {branch_colors.get(branch, '#8B5E3C')};"> {entry.get('task', '')[:80]}</h3>
