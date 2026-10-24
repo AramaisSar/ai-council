@@ -1385,7 +1385,38 @@ elif branch == 'grain':
         manual_km = st.number_input("Или введи км вручную:", min_value=0.0, value=0.0, step=10.0)
         if manual_km > 0:
             st.session_state['grain_distance'] = manual_km
+        # === ДИАГНОСТИКА ПОИСКА ===
+    if st.button("🔧 Диагностика поиска адресов"):
+        test_addr = "Ростов-на-Дону"
+        st.markdown(f"**Проверка геокодеров на адресе:** {test_addr}")
+        
+        yk = load_yandex_key()
+        st.write(f"**1. Ключ Яндекс найден:** {'ДА ✅' if yk else 'НЕТ ❌'}")
+        if yk:
+            try:
+                r = requests.get("https://geocode-maps.yandex.ru/1.x/",
+                    params={'apikey': yk, 'geocode': test_addr, 'format': 'json', 'results': 1}, timeout=15)
+                st.write(f"**Яндекс:** статус {r.status_code} → {r.text[:200]}")
+            except Exception as e:
+                st.write(f"**Яндекс:** ошибка {str(e)}")
+        else:
+            st.write("**Яндекс:** пропущен (нет ключа)")
+        
+        try:
+            r = requests.get("https://photon.komoot.io/api/", params={'q': test_addr, 'limit': 1}, timeout=15)
+            st.write(f"**2. Photon:** статус {r.status_code} → {r.text[:200]}")
+        except Exception as e:
+            st.write(f"**2. Photon:** ошибка {str(e)}")
+        
+        try:
+            r = requests.get("https://nominatim.openstreetmap.org/search",
+                params={'q': test_addr, 'format': 'json', 'limit': 1},
+                headers={'User-Agent': 'ai-council-grain/1.0'}, timeout=15)
+            st.write(f"**3. Nominatim:** статус {r.status_code} → {r.text[:200]}")
+        except Exception as e:
+            st.write(f"**3. Nominatim:** ошибка {str(e)}")
     
+    st.markdown("---")
     distance_km = st.session_state.get('grain_distance', 0.0)
     if distance_km > 0:
         st.info(f"🛣 Расстояние между точками: **{distance_km:.1f} км**")
