@@ -117,10 +117,30 @@ st.markdown("""
     .stTextArea textarea {
     border-radius: 12px !important;
     border: 2px solid rgba(0, 217, 255, 0.3) !important;
-    background: rgba(255, 255, 255, 0.05) !important;
-    color: #E0E0E0 !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #1a1a1a !important;
     padding: 15px !important;
     font-size: 16px !important;
+}
+
+.stTextArea textarea:focus {
+    border-color: #00D9FF !important;
+    box-shadow: 0 0 15px rgba(0, 217, 255, 0.3) !important;
+}
+
+/* Обычные текстовые поля (однострочные) */
+.stTextInput input {
+    border-radius: 12px !important;
+    border: 2px solid rgba(0, 217, 255, 0.3) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #1a1a1a !important;
+    padding: 12px 15px !important;
+    font-size: 15px !important;
+}
+
+.stTextInput input:focus {
+    border-color: #00D9FF !important;
+    box-shadow: 0 0 15px rgba(0, 217, 255, 0.3) !important;
 }
     
     .stTextArea textarea:focus {
