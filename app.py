@@ -1405,7 +1405,6 @@ elif branch == 'grain':
         if st.button("🗺 Рассчитать расстояние", use_container_width=True):
             if load_addr.strip() and unload_addr.strip():
                 with st.spinner("Строю маршрут..."):
-                                    with st.spinner("Строю маршрут..."):
                     km, err, src = get_route_distance_km(load_addr, unload_addr)
                     if km:
                         st.session_state['grain_distance'] = km
@@ -1418,7 +1417,8 @@ elif branch == 'grain':
         manual_km = st.number_input("Или введи км вручную:", min_value=0.0, value=0.0, step=10.0)
         if manual_km > 0:
             st.session_state['grain_distance'] = manual_km
-        # === ДИАГНОСТИКА ПОИСКА ===
+    
+    # === ДИАГНОСТИКА ПОИСКА ===
     if st.button("🔧 Диагностика поиска адресов"):
         test_addr = "Ростов-на-Дону"
         st.markdown(f"**Проверка геокодеров на адресе:** {test_addr}")
@@ -1449,7 +1449,6 @@ elif branch == 'grain':
         except Exception as e:
             st.write(f"**3. Nominatim:** ошибка {str(e)}")
     
-    st.markdown("---")
     distance_km = st.session_state.get('grain_distance', 0.0)
     if distance_km > 0:
         st.info(f"🛣 Расстояние между точками: **{distance_km:.1f} км**")
