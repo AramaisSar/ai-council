@@ -1405,10 +1405,11 @@ elif branch == 'grain':
         if st.button("🗺 Рассчитать расстояние", use_container_width=True):
             if load_addr.strip() and unload_addr.strip():
                 with st.spinner("Строю маршрут..."):
-                    km, err = get_route_distance_km(load_addr, unload_addr)
+                                    with st.spinner("Строю маршрут..."):
+                    km, err, src = get_route_distance_km(load_addr, unload_addr)
                     if km:
                         st.session_state['grain_distance'] = km
-                        st.success(f"✅ Расстояние: {km:.1f} км")
+                        st.success(f"✅ Расстояние: {km:.1f} км (источник: {src})")
                     else:
                         st.error(err)
             else:
