@@ -1173,7 +1173,7 @@ if st.session_state['open_entry']:
 
 if not st.session_state['branch']:
  if not st.session_state['branch']:
-    # СТАРТОВАЯ СТРАНИЦА — МИНИМАЛИЗМ
+    # СТАРТОВАЯ СТРАНИЦА — 4 ВЕТВИ
     st.markdown("""
     <div class="main-header">
         <div>
@@ -1187,13 +1187,13 @@ if not st.session_state['branch']:
     </div>
     """, unsafe_allow_html=True)
     
-        col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown("""
         <div class="branch-card branch-science">
-<h3 style="margin: 0; font-size: 2.2rem;">🎓 Наука</h3>
-</div>
+            <h3 style="margin: 0; font-size: 2.2rem;">🎓 Наука</h3>
+        </div>
         """, unsafe_allow_html=True)
         if st.button("🚀 НАУКА", key="btn_science", use_container_width=True):
             st.session_state['branch'] = 'science'
@@ -1207,7 +1207,7 @@ if not st.session_state['branch']:
             <h3 style="margin: 0; font-size: 2.2rem;">⚖️ Юридическая практика</h3>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("⚖️ ЮРИДИЧЕСКАЯ ВЕТВЬ", key="btn_legal", use_container_width=True):
+        if st.button("⚖️ ЮРИДИЧЕСКАЯ ПРАКТИКА", key="btn_legal", use_container_width=True):
             st.session_state['branch'] = 'legal'
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
@@ -1224,7 +1224,8 @@ if not st.session_state['branch']:
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
             st.rerun()
-        with col4:
+    
+    with col4:
         st.markdown("""
         <div class="branch-card branch-grain">
             <h3 style="margin: 0; font-size: 2.2rem;">🌾 Зерновой бизнес</h3>
@@ -1235,6 +1236,7 @@ if not st.session_state['branch']:
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
             st.rerun()
+    
     st.stop()
 # === РАБОТА ВНУТРИ ВЕТВИ ===
 branch = st.session_state['branch']
