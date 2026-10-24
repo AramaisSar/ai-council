@@ -947,8 +947,8 @@ def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
 def display_opened_entry(entry):
     if not entry: return
     branch = entry.get('branch', 'science')
-    branch_names = {'science': '🎓 Научная ветвь', 'legal': '⚖️ Юридическая ветвь', 'business': '💼 Бизнес-финансовая ветвь'}
-    branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60'}
+branch_names = {'science': '🎓 Наука', 'legal': '⚖️ Юридическая практика', 'business': '💼 Бизнес-консалтинг'}
+        branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60'}
     
     st.markdown(f"""<div class="ai-card" style="border-left: 8px solid {branch_colors.get(branch, '#8B5E3C')};">
         <h3 style="margin: 0; color: {branch_colors.get(branch, '#8B5E3C')};"> {entry.get('task', '')[:80]}</h3>
@@ -1103,10 +1103,10 @@ if not st.session_state['branch']:
     with col1:
         st.markdown("""
         <div class="branch-card branch-science">
-            <h3 style="margin: 0; font-size: 2.2rem;">🎓 Научная ветвь</h3>
-        </div>
+<h3 style="margin: 0; font-size: 2.2rem;">🎓 Наука</h3>
+</div>
         """, unsafe_allow_html=True)
-        if st.button("🚀 НАУЧНАЯ ВЕТВЬ", key="btn_science", use_container_width=True):
+        if st.button("🚀 НАУКА", key="btn_science", use_container_width=True):
             st.session_state['branch'] = 'science'
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
@@ -1115,7 +1115,7 @@ if not st.session_state['branch']:
     with col2:
         st.markdown("""
         <div class="branch-card branch-legal">
-            <h3 style="margin: 0; font-size: 2.2rem;">⚖️ Юридическая ветвь</h3>
+            <h3 style="margin: 0; font-size: 2.2rem;">⚖️ Юридическая практика</h3>
         </div>
         """, unsafe_allow_html=True)
         if st.button("⚖️ ЮРИДИЧЕСКАЯ ВЕТВЬ", key="btn_legal", use_container_width=True):
@@ -1127,10 +1127,10 @@ if not st.session_state['branch']:
     with col3:
         st.markdown("""
         <div class="branch-card branch-business">
-            <h3 style="margin: 0; font-size: 2.2rem;">💼 Бизнес-финансовая ветвь</h3>
+            <h3 style="margin: 0; font-size: 2.2rem;">💼 Бизнес-консалтинг</h3>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("💼 БИЗНЕС-ФИНАНСОВАЯ ВЕТВЬ", key="btn_business", use_container_width=True):
+        if st.button("💼 БИЗНЕС-КОНСАЛТИНГ", key="btn_business", use_container_width=True):
             st.session_state['branch'] = 'business'
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
@@ -1139,7 +1139,7 @@ if not st.session_state['branch']:
     st.stop()
 # === РАБОТА ВНУТРИ ВЕТВИ ===
 branch = st.session_state['branch']
-branch_names = {'science': '🎓 Научная ветвь', 'legal': '⚖️ Юридическая ветвь', 'business': '💼 Бизнес-финансовая ветвь'}
+branch_names = {'science': '🎓 Наука', 'legal': '⚖️ Юридическая практика', 'business': '💼 Бизнес-консалтинг'}
 branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60'}
 project_label = selected_project['name'] if selected_project else '💬 Быстрый диалог'
 
