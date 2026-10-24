@@ -1240,8 +1240,8 @@ if not st.session_state['branch']:
     st.stop()
 # === РАБОТА ВНУТРИ ВЕТВИ ===
 branch = st.session_state['branch']
-branch_names = {'science': '🎓 Наука', 'legal': '⚖️ Юридическая практика', 'business': '💼 Бизнес-консалтинг'}
-branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60'}
+branch_names = {'science': '🎓 Наука', 'legal': '⚖️ Юридическая практика', 'business': '💼 Бизнес-консалтинг', 'grain': '🌾 Зерновой бизнес'}
+branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60', 'grain': '#FFD700'}
 project_label = selected_project['name'] if selected_project else '💬 Быстрый диалог'
 
 st.markdown(f"""<div class="ai-card" style="border-left: 8px solid {branch_colors[branch]};">
