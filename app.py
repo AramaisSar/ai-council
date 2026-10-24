@@ -115,13 +115,13 @@ st.markdown("""
     .card-api { border-left: 5px solid #00D9FF !important; background: rgba(0, 217, 255, 0.05) !important; }
 
     .stTextArea textarea {
-        border-radius: 12px !important;
-        border: 2px solid rgba(0, 217, 255, 0.3) !important;
-        background: rgba(255, 255, 255, 0.05) !important;
-        color: #E0E0E0 !important;
-        padding: 15px !important;
-        font-size: 16px !important;
-    }
+    border-radius: 12px !important;
+    border: 2px solid rgba(0, 217, 255, 0.3) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #E0E0E0 !important;
+    padding: 15px !important;
+    font-size: 16px !important;
+}
     
     .stTextArea textarea:focus {
         border-color: #00D9FF !important;
