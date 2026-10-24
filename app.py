@@ -300,6 +300,11 @@ st.markdown("""
         color: #888 !important;
         font-weight: 400 !important;
     }
+    .branch-grain { 
+    border-left: 6px solid #FFD700 !important;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+}
+.branch-grain h3 { color: #FFD700 !important; text-shadow: 0 0 25px rgba(255, 215, 0, 0.6) !important; }
     
     /* Стили для фонового изображения на главной */
    .main-header {
@@ -427,7 +432,38 @@ def get_yahoo_finance_data(ticker, period='1mo'):
         }
     except Exception as e:
         return {'error': f'Ошибка Yahoo Finance: {str(e)}'}
+# --- ФУНКЦИИ ДЛЯ ЗЕРНОВОГО БИЗНЕСА ---
+def geocode_address(address):
+    """Получает координаты адреса через OpenStreetMap"""
+    try:
+        url = "https://nominatim.openstreetmap.org/search"
+        params = {'q': address, 'format': 'json', 'limit': 1}
+        headers = {'User-Agent': 'ai-council-grain/1.0'}
+        response = requests.get(url, params=params, headers=headers, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+        if data:
+            return float(data[0]['lat']), float(data[0]['lon'])
+        return None
+    except Exception:
+        return None
 
+def get_route_distance_km(addr1, addr2):
+    """Считает расстояние по дороге между адресами"""
+    coord1 = geocode_address(addr1)
+    coord2 = geocode_address(addr2)
+    if not coord1 or not coord2:
+        return None, "Не удалось найти один из адресов. Проверь написание или введи км вручную."
+    try:
+        url = f"https://router.project-osrm.org/route/v1/driving/{coord1[1]},{coord1[0]};{coord2[1]},{coord2[0]}"
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+        if data.get('routes'):
+            return data['routes'][0]['distance'] / 1000.0, None
+        return None, "Маршрут не построен."
+    except Exception as e:
+        return None, f"Ошибка маршрута: {str(e)}"
 # --- ФУНКЦИИ ДЛЯ ФИНАНСОВЫХ МОДЕЛЕЙ ---
 def create_financial_model(initial_investment, annual_revenue, annual_costs, growth_rate, discount_rate, years=5):
     wb = openpyxl.Workbook()
@@ -826,6 +862,48 @@ def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
 ## ЗАМЕЧАНИЯ: {critique}
 
 Исправь риски, добавь ссылки на нормы права. Документ должен быть готов к использованию. НЕ пиши научную статью!"""
+    elif branch == 'grain':
+        chatgpt_prompt = f"""Ты — эксперт по зерновому рынку, логистике и закупкам зерна с 15-летним опытом. Подготовь аналитический документ по зерновой сделке.
+
+{full_context}
+
+## ЗАДАЧА: {task}
+
+## ТРЕБОВАНИЯ:
+- Используй данные калькулятора (расстояние, логистика, закупка, заработок), если они есть
+- Рассчитай экономику сделки (цена без НДС, с НДС 10%)
+- Оцени риски: логистические, ценовые, качественные
+- Дай рекомендации по оптимизации маршрута и коэффициента
+- Деловой стиль, конкретные цифры"""
+
+        claude_prompt = f"""Ты — аудитор зерновых сделок. Проверь расчёты и анализ.
+
+{full_context}
+
+## ЗАДАЧА: {task}
+## ДОКУМЕНТ: {draft}
+
+## ПРОВЕРЬ:
+1. Корректность расчёта расстояния и логистики
+2. Правильность формулы цены (без НДС и с НДС 10%)
+3. Реалистичность коэффициента и заработка
+4. Учтены ли риски (маршрут, качество зерна, оплата)
+5. Что упущено"""
+
+        qwen_prompt = f"""Ты — главный консультант по зерновому бизнесу. Создай ФИНАЛЬНУЮ версию документа.
+
+{full_context}
+
+## ЗАДАЧА: {task}
+## ЧЕРНОВИК: {draft}
+## ЗАМЕЧАНИЯ: {critique}
+
+## ТРЕБОВАНИЯ:
+1. Исправь все замечания
+2. Приведи точные расчёты по сделке
+3. Дай итоговую цену без НДС и с НДС 10%
+4. Добавь рекомендации по оптимизации
+5. Деловой стиль, готово для принятия решения"""
 
     else:  # business
         business_context = ""
@@ -948,8 +1026,8 @@ def display_opened_entry(entry):
     if not entry:
         return
     branch = entry.get('branch', 'science')
-    branch_names = {'science': '🎓 Наука', 'legal': '⚖️ Юридическая практика', 'business': '💼 Бизнес-консалтинг'}
-    branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60'}
+    branch_names = {'science': '🎓 Наука', 'legal': '⚖️ Юридическая практика', 'business': '💼 Бизнес-консалтинг', 'grain': '🌾 Зерновой бизнес'}
+    branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60', 'grain': '#FFD700'}
     
     st.markdown(f"""<div class="ai-card" style="border-left: 8px solid {branch_colors.get(branch, '#8B5E3C')};">
         <h3 style="margin: 0; color: {branch_colors.get(branch, '#8B5E3C')};">📜 {entry.get('task', '')[:80]}</h3>
@@ -1107,7 +1185,7 @@ if not st.session_state['branch']:
     </div>
     """, unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown("""
@@ -1144,7 +1222,17 @@ if not st.session_state['branch']:
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
             st.rerun()
-    
+        with col4:
+        st.markdown("""
+        <div class="branch-card branch-grain">
+            <h3 style="margin: 0; font-size: 2.2rem;">🌾 Зерновой бизнес</h3>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("🌾 ЗЕРНОВОЙ БИЗНЕС", key="btn_grain", use_container_width=True):
+            st.session_state['branch'] = 'grain'
+            st.session_state['selected_project'] = None
+            st.session_state['show_new_chat'] = False
+            st.rerun()
     st.stop()
 # === РАБОТА ВНУТРИ ВЕТВИ ===
 branch = st.session_state['branch']
@@ -1226,7 +1314,80 @@ elif branch == 'legal':
         "Договор (купли-продажи, аренды, услуг)", "Исковое заявление", "Претензия",
         "Жалоба (в суд, прокуратуру)", "Юридическое письмо", "Правовое заключение", "Другое"
     ], index=0)
-
+elif branch == 'grain':
+    st.markdown("""<div class="ai-card" style="border-left: 5px solid #FFD700; background: rgba(255, 215, 0, 0.05);">
+    <h3 style="margin: 0 0 10px 0; color: #FFD700;">🌾 Калькулятор логистики и закупки зерна</h3>
+    <p style="margin: 0; color: #A89F91;">Расчёт расстояния, стоимости перевозки и итоговой цены с НДС.</p></div>""", unsafe_allow_html=True)
+    
+    # БЛОК 1
+    st.markdown("#### 📍 Блок 1. Адреса погрузки и выгрузки")
+    col1, col2 = st.columns(2)
+    with col1:
+        load_addr = st.text_input("Адрес погрузки:", placeholder="Например: Ростовская обл, г. Зерноград, ул. Ленина 1")
+    with col2:
+        unload_addr = st.text_input("Адрес выгрузки:", placeholder="Например: Краснодарский край, г. Новороссийск")
+    
+    col3, col4 = st.columns([1, 2])
+    with col3:
+        if st.button("🗺 Рассчитать расстояние", use_container_width=True):
+            if load_addr.strip() and unload_addr.strip():
+                with st.spinner("Строю маршрут..."):
+                    km, err = get_route_distance_km(load_addr, unload_addr)
+                    if km:
+                        st.session_state['grain_distance'] = km
+                        st.success(f"✅ Расстояние: {km:.1f} км")
+                    else:
+                        st.error(err)
+            else:
+                st.warning("Введи оба адреса")
+    with col4:
+        manual_km = st.number_input("Или введи км вручную:", min_value=0.0, value=0.0, step=10.0)
+        if manual_km > 0:
+            st.session_state['grain_distance'] = manual_km
+    
+    distance_km = st.session_state.get('grain_distance', 0.0)
+    if distance_km > 0:
+        st.info(f"🛣 Расстояние между точками: **{distance_km:.1f} км**")
+    
+    st.markdown("---")
+    
+    # БЛОК 2
+    st.markdown("#### 🚛 Блок 2. Стоимость логистики")
+    coef = st.number_input("Коэффициент логистики (руб/км за 1 тонну):", min_value=0.0, value=3.5, step=0.1)
+    logistics_cost = distance_km * coef
+    st.info(f"💰 Стоимость перевозки за 1 тонну: **{logistics_cost:,.2f} руб** (= {distance_km:.1f} км × {coef} руб/км)")
+    
+    st.markdown("---")
+    
+    # БЛОК 3
+    st.markdown("#### 💼 Блок 3. Твой заработок")
+    margin = st.number_input("Заработок за 1 тонну (руб):", min_value=0.0, value=500.0, step=50.0)
+    
+    st.markdown("---")
+    
+    # БЛОК 4
+    st.markdown("#### 🌾 Блок 4. Стоимость закупки")
+    purchase = st.number_input("Стоимость закупки за 1 тонну (руб):", min_value=0.0, value=12000.0, step=100.0)
+    
+    st.markdown("---")
+    
+    # БЛОК 5
+    st.markdown("#### 📊 Блок 5. Итоговая цена")
+    price_no_vat = logistics_cost + purchase + margin
+    price_vat = price_no_vat * 1.10
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Цена без НДС", f"{price_no_vat:,.2f} руб")
+    with col2:
+        st.metric("Цена с НДС 10%", f"{price_vat:,.2f} руб")
+    
+    st.markdown("**Детализация расчёта за 1 тонну:**")
+    st.write(f"- Закупка зерна: {purchase:,.2f} руб")
+    st.write(f"- Логистика ({distance_km:.1f} км × {coef} руб/км): {logistics_cost:,.2f} руб")
+    st.write(f"- Твой заработок: {margin:,.2f} руб")
+    st.write(f"- **Итого без НДС: {price_no_vat:,.2f} руб**")
+    st.write(f"- **Итого с НДС 10%: {price_vat:,.2f} руб**")
 elif branch == 'business':
     # Анализ банковских выписок
     st.markdown("""<div class="ai-card card-api"><h3 style="margin: 0 0 10px 0; color: #3498DB;">🏦 Анализ банковских выписок</h3>
