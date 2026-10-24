@@ -946,7 +946,8 @@ def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
 # --- ОТОБРАЖЕНИЕ ОТКРЫТОЙ БЕСЕДЫ ---
 def display_opened_entry(entry):
     if not entry: return
-    branch = entry.get('branch', 'science')
+    # === РАБОТА ВНУТРИ ВЕТВИ ===
+branch = st.session_state['branch']
 branch_names = {'science': '🎓 Наука', 'legal': '⚖️ Юридическая практика', 'business': '💼 Бизнес-консалтинг'}
 branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60'}
     
