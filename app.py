@@ -434,19 +434,21 @@ def get_yahoo_finance_data(ticker, period='1mo'):
         return {'error': f'Ошибка Yahoo Finance: {str(e)}'}
 # --- ФУНКЦИИ ДЛЯ ЗЕРНОВОГО БИЗНЕСА ---
 def geocode_address(address):
-    """Получает координаты адреса через OpenStreetMap"""
-    try:
-        url = "https://nominatim.openstreetmap.org/search"
-        params = {'q': address, 'format': 'json', 'limit': 1}
-        headers = {'User-Agent': 'ai-council-grain/1.0'}
-        response = requests.get(url, params=params, headers=headers, timeout=15)
-        response.raise_for_status()
-        data = response.json()
-        if data:
-            return float(data[0]['lat']), float(data[0]['lon'])
-        return None
-    except Exception:
-        return None
+    """Получает координаты адреса через OpenStreetMap (с повторной попыткой для РФ)"""
+    headers = {'User-Agent': 'ai-council-grain/1.0'}
+    variants = [address, address + ", Россия"]
+    for variant in variants:
+        try:
+            url = "https://nominatim.openstreetmap.org/search"
+            params = {'q': variant, 'format': 'json', 'limit': 1}
+            response = requests.get(url, params=params, headers=headers, timeout=15)
+            response.raise_for_status()
+            data = response.json()
+            if data:
+                return float(data[0]['lat']), float(data[0]['lon'])
+        except Exception:
+            continue
+    return None
 
 def get_route_distance_km(addr1, addr2):
     """Считает расстояние по дороге между адресами"""
@@ -1365,15 +1367,15 @@ elif branch == 'grain':
     
     st.markdown("---")
     
-    # БЛОК 4
-    st.markdown("#### 🌾 Блок 4. Стоимость закупки")
-    purchase = st.number_input("Стоимость закупки за 1 тонну (руб):", min_value=0.0, value=12000.0, step=100.0)
+       # БЛОК 4
+    st.markdown("#### 🌾 Блок 4. Цена сделки (Z)")
+    purchase = st.number_input("Цена, по которой экспортер покупает (руб за 1 тонну):", min_value=0.0, value=12000.0, step=100.0)
     
     st.markdown("---")
     
     # БЛОК 5
     st.markdown("#### 📊 Блок 5. Итоговая цена")
-    price_no_vat = logistics_cost + purchase + margin
+    price_no_vat = purchase - logistics_cost - margin
     price_vat = price_no_vat * 1.10
     
     col1, col2 = st.columns(2)
@@ -1382,12 +1384,15 @@ elif branch == 'grain':
     with col2:
         st.metric("Цена с НДС 10%", f"{price_vat:,.2f} руб")
     
-    st.markdown("**Детализация расчёта за 1 тонну:**")
-    st.write(f"- Закупка зерна: {purchase:,.2f} руб")
-    st.write(f"- Логистика ({distance_km:.1f} км × {coef} руб/км): {logistics_cost:,.2f} руб")
-    st.write(f"- Твой заработок: {margin:,.2f} руб")
-    st.write(f"- **Итого без НДС: {price_no_vat:,.2f} руб**")
-    st.write(f"- **Итого с НДС 10%: {price_vat:,.2f} руб**")
+    if price_no_vat < 0:
+        st.error("⚠️ Внимание: результат отрицательный! Логистика и заработок превышают цену сделки — сделка убыточна.")
+    
+    st.markdown("**Детализация расчёта за 1 тонну (формула Z − (X×Y) − A):**")
+    st.write(f"- Цена сделки (Z): {purchase:,.2f} руб")
+    st.write(f"- Минус логистика (X×Y = {distance_km:.1f} км × {coef} руб/км): −{logistics_cost:,.2f} руб")
+    st.write(f"- Минус твой заработок (A): −{margin:,.2f} руб")
+    st.write(f"- **= Цена без НДС: {price_no_vat:,.2f} руб**")
+    st.write(f"- **Цена с НДС 10%: {price_vat:,.2f} руб**")
 elif branch == 'business':
     # Анализ банковских выписок
     st.markdown("""<div class="ai-card card-api"><h3 style="margin: 0 0 10px 0; color: #3498DB;">🏦 Анализ банковских выписок</h3>
