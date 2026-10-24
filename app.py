@@ -433,10 +433,46 @@ def get_yahoo_finance_data(ticker, period='1mo'):
     except Exception as e:
         return {'error': f'Ошибка Yahoo Finance: {str(e)}'}
 # --- ФУНКЦИИ ДЛЯ ЗЕРНОВОГО БИЗНЕСА ---
+def normalize_address(address):
+    """Заменяет сокращения на полные названия для лучшего поиска"""
+    replacements = [
+        ('х.', 'хутор'), ('ст-ца.', 'станица'), ('ст.', 'станица'), ('обл.', 'область'),
+        ('г.', 'город'), ('с.', 'село'), ('п.', 'посёлок'), ('пгт.', 'посёлок городского типа'),
+        ('р-н.', 'район'), ('р-он.', 'район'), ('ул.', 'улица'), ('д.', 'дом'),
+        ('мкр.', 'микрорайон')
+    ]
+    result = address
+    for short, full in replacements:
+        result = result.replace(short, full)
+    return result
+
 def geocode_address(address):
-    """Получает координаты адреса через OpenStreetMap (с повторной попыткой для РФ)"""
+    """Получает координаты адреса через несколько бесплатных геокодеров"""
+    variants = [
+        address,
+        normalize_address(address),
+        address + ", Россия",
+        normalize_address(address) + ", Россия"
+    ]
+    
+    # Попытка 1: Photon (Komoot) — хорошо понимает неструктурированные адреса
+    for variant in variants:
+        try:
+            url = "https://photon.komoot.io/api/"
+            params = {'q': variant, 'limit': 1}
+            response = requests.get(url, params=params, timeout=15)
+            response.raise_for_status()
+            data = response.json()
+            features = data.get('features', [])
+            if features:
+                coords = features[0].get('geometry', {}).get('coordinates')
+                if coords:
+                    return float(coords[1]), float(coords[0])
+        except Exception:
+            continue
+    
+    # Попытка 2: Nominatim (OpenStreetMap)
     headers = {'User-Agent': 'ai-council-grain/1.0'}
-    variants = [address, address + ", Россия"]
     for variant in variants:
         try:
             url = "https://nominatim.openstreetmap.org/search"
@@ -448,6 +484,7 @@ def geocode_address(address):
                 return float(data[0]['lat']), float(data[0]['lon'])
         except Exception:
             continue
+    
     return None
 
 def get_route_distance_km(addr1, addr2):
