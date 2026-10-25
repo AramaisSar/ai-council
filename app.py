@@ -862,11 +862,74 @@ def analyze_image(file):
     return response.choices[0].message.content
 
 # --- ПРОМПТЫ ДЛЯ РАЗНЫХ ВЕТВЕЙ ---
-def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
     if branch == 'science':
-        chatgpt_prompt = f"""Ты — научный ассистент. Подготовь ЧЕРНОВИК НАУЧНОЙ РАБОТЫ.
+        mode = st.session_state.get('science_mode', 'Написать статью с нуля')
+        
+        if mode == "Доработать существующую статью по рецензии":
+            chatgpt_prompt = f"""Ты — научный ассистент, эксперт по доработке статей. Твоя задача — доработать существующую статью с учётом замечаний рецензента.
 
 {full_context}
+
+## ЗАДАЧА: {task}
+
+## АЛГОРИТМ РАБОТЫ:
+1. Внимательно изучи ИСХОДНУЮ статью (она должна быть среди загруженных файлов)
+2. Изучи РЕЦЕНЗИЮ/ЗАМЕЧАНИЯ (тоже в загруженных файлах)
+3. Для каждого замечания из рецензии:
+   - Пойми суть замечания
+   - Найди место в статье, которое нужно доработать
+   - Внеси правки, сохранив стиль и логику исходной статьи
+4. Составь ОТВЕТ НА РЕЦЕНЗИЮ — таблицу "Замечание → Как исправлено"
+
+## ТРЕБОВАНИЯ:
+- Сохраняй стиль исходной статьи
+- Не переписывай то, что не просили дорабатывать
+- Цитируй новые источники как [1], [2] и т.д.
+- В конце — полный СПИСОК ЛИТЕРАТУРЫ (включая новые источники)
+- В самом конце — ОТВЕТ НА РЕЦЕНЗИЮ в виде таблицы
+
+Выдай доработанную статью целиком + ответ на рецензию."""
+        else:
+            chatgpt_prompt = f"""Ты — научный ассистент и исследователь. Подготовь ЧЕРНОВИК НАУЧНОЙ РАБОТЫ.
+
+{full_context}
+
+## ЗАДАЧА: {task}
+
+## СТРУКТУРА:
+1. Введение
+2. Обзор литературы
+3. Методология
+4. Результаты
+5. Выводы
+6. СПИСОК ЛИТЕРАТУРЫ
+
+Цитируй: книги [К1], статьи [1], данные [Данные]. Научный стиль."""
+
+        claude_prompt = f"""Ты — строгий научный рецензент. Проверь результат.
+
+{full_context}
+
+## ЗАДАЧА: {task}
+## РЕЗУЛЬТАТ: {draft}
+
+Проверь:
+1. Если это доработка по рецензии — учтены ли ВСЕ замечания?
+2. Корректность цитат и ссылок
+3. Логика и структура
+4. Список литературы
+Будь строгим."""
+
+        qwen_prompt = f"""Ты — главный редактор научного журнала. Создай ФИНАЛЬНУЮ ВЕРСИЮ.
+
+{full_context}
+
+## ЗАДАЧА: {task}
+## ЧЕРНОВИК: {draft}
+## КРИТИКА: {critique}
+
+Исправь замечания, добавь цитаты, оформи список литературы.
+Если это доработка по рецензии — добавь в конец ОТВЕТ НА РЕЦЕНЗИЮ."""
 
 ## ЗАДАЧА: {task}
 
@@ -899,10 +962,72 @@ def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
 
 Исправь замечания, добавь цитаты, создай список литературы."""
 
-    elif branch == 'legal':
-        chatgpt_prompt = f"""Ты — практикующий юрист с 15-летним стажем. Подготовь ПРОЕКТ ЮРИДИЧЕСКОГО ДОКУМЕНТА.
+        elif branch == 'legal':
+        chatgpt_prompt = f"""Ты — практикующий юрист с 15-летним стажем в судебных спорах. Твоя задача — изучить ВСЕ загруженные документы и подготовить юридически грамотный отзыв.
 
 {full_context}
+
+## ЗАДАЧА: {task}
+
+## АЛГОРИТМ РАБОТЫ С НЕСКОЛЬКИМИ ДОКУМЕНТАМИ:
+1. Изучи ВСЕ загруженные документы по порядку (исковое заявление, отзывы, возражения и т.д.)
+2. Выяви позицию каждой стороны
+3. Определи ключевые правовые споры между сторонами
+4. Найди слабые места в позициях оппонентов
+5. Сформулируй правовую позицию по задаче
+
+## ТРЕБОВАНИЯ:
+- Строгий юридический стиль (НЕ научный!)
+- ОБЯЗАТЕЛЬНЫЕ ссылки на конкретные статьи законов (ГК РФ, АПК РФ, ГПК РФ, УК РФ)
+- Ссылки на актуальную СУДЕБНУЮ ПРАКТИКУ (Постановления Пленумов ВС РФ, определения ВС РФ, обзоры практики)
+- Структура отзыва:
+  1. Вводная часть (суть дела, стороны, предмет спора)
+  2. Фактические обстоятельства (краткое изложение)
+  3. Правовое обоснование (со ссылками на нормы и практику)
+  4. Мотивировочная часть (почему требования обоснованны/необоснованны)
+  5. Просительная часть
+  6. Приложения (перечень)
+- НЕ пиши научную статью — пиши готовый процессуальный документ!
+
+Подготовь полный отзыв/возражение/иск — в зависимости от задачи."""
+
+        claude_prompt = f"""Ты — старший партнёр юридической фирмы, эксперт по судебной практике. Проверь подготовленный документ.
+
+{full_context}
+
+## ЗАДАЧА: {task}
+## ДОКУМЕНТ: {draft}
+
+## ПРОВЕРЬ:
+1. Учтены ли ВСЕ доводы из загруженных документов?
+2. Все ли ссылки на законы корректны и актуальны?
+3. Приведена ли релевантная судебная практика?
+4. Нет ли юридических рисков и двусмысленностей?
+5. Соблюдена ли структура процессуального документа?
+6. Соответствует ли документ актуальному законодательству РФ?
+7. Какие пункты могут быть оспорены в суде?
+8. Что упущено?
+
+Будь МАКСИМАЛЬНО строгим — как судья."""
+
+        qwen_prompt = f"""Ты — старший партнёр юрфирмы. Создай ФИНАЛЬНУЮ ВЕРСИЮ юридического документа.
+
+{full_context}
+
+## ЗАДАЧА: {task}
+## ПРОЕКТ: {draft}
+## ЗАМЕЧАНИЯ: {critique}
+
+## ТРЕБОВАНИЯ:
+1. Исправь ВСЕ замечания
+2. Добавь недостающие ссылки на нормы права
+3. Добавь ссылки на релевантную судебную практику (Постановления Пленумов ВС РФ, определения ВС РФ, обзоры судебной практики)
+4. Устрани все двусмысленности
+5. Строгий юридический стиль
+6. Документ должен быть ГОТОВ К ПОДАЧЕ В СУД
+7. НЕ пиши научную статью!
+
+Создай финальную версию документа."""
 
 ## ЗАДАЧА: {task}
 
@@ -1329,6 +1454,13 @@ st.markdown("---")
 
 # === ИНСТРУМЕНТЫ ВЕТВЕЙ ===
 if branch == 'science':
+        science_mode = st.radio(
+        "Режим работы:",
+        ["Написать статью с нуля", "Доработать существующую статью по рецензии", "Научный обзор по источникам"],
+        index=0
+    )
+    st.session_state['science_mode'] = science_mode
+    st.markdown("---")
     st.markdown("""<div class="ai-card card-library"><h3 style="margin: 0 0 10px 0; color: #9B59B6;">📚 Моя научная библиотека</h3>
     <p style="margin: 0; color: #A89F91;">Укажи путь к папке с учебниками.</p></div>""", unsafe_allow_html=True)
     library_path = st.text_input("Путь к папке:", placeholder="C:\\Users\\123\\Documents\\Научная_библиотека")
@@ -1621,29 +1753,53 @@ elif branch == 'business':
 st.markdown("---")
 st.markdown("""<div class="ai-card card-excel"><h3 style="margin: 0 0 10px 0; color: #27AE60;">📎 Загрузи материалы</h3>
 <p style="margin: 0; color: #A89F91;">PDF, DOCX, TXT, Excel, фото</p></div>""", unsafe_allow_html=True)
-uploaded_file = st.file_uploader("Выбери файл:", type=['pdf', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'xlsx', 'xls'])
+uploaded_files = st.file_uploader(
+    "Загрузи материалы (можно несколько файлов сразу):", 
+    type=['pdf', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'xlsx', 'xls'],
+    accept_multiple_files=True
+)
 file_text = ""; file_name = ""; file_type = ""; excel_analysis = None
 
-if uploaded_file is not None:
-    try:
-        file_name = uploaded_file.name; fn = file_name.lower()
-        if fn.endswith(('.jpg', '.jpeg', '.png')):
-            with st.spinner("Анализирую изображение..."): file_text = analyze_image(uploaded_file)
-            st.success(f"✅ Изображение: {file_name}"); file_type = "image"
-        elif fn.endswith(('.xlsx', '.xls')):
-            with st.spinner("Анализирую Excel..."):
-                file_text, num = extract_excel_data(uploaded_file)
-                excel_analysis = analyze_excel_structure(uploaded_file)
-                st.success(f"✅ Excel: {file_name} ({num} листов)")
-                if excel_analysis and excel_analysis['has_financial_data']: st.success("💰 Финансовые данные")
-            file_type = "excel"
-        else:
-            file_text = extract_text(uploaded_file)
-            if len(file_text) > MAX_FILE_SIZE: file_text = file_text[:MAX_FILE_SIZE]
-            st.success(f"✅ Файл: {file_name}"); file_type = "document"
-    except Exception as e: st.error(f"❌ Ошибка: {e}")
+file_texts = []
+file_names = []
+excel_analysis = None
 
-st.markdown("---")
+if uploaded_files:
+    st.info(f"📎 Загружено файлов: {len(uploaded_files)}")
+    for idx, uploaded_file in enumerate(uploaded_files):
+        try:
+            file_name = uploaded_file.name
+            file_names.append(file_name)
+            fn = file_name.lower()
+            
+            if fn.endswith(('.jpg', '.jpeg', '.png')):
+                with st.spinner(f"Анализирую изображение {file_name}..."):
+                    file_text = analyze_image(uploaded_file)
+                st.success(f"✅ Изображение: {file_name}")
+                file_texts.append(("image", file_name, file_text))
+                
+            elif fn.endswith(('.xlsx', '.xls')):
+                with st.spinner(f"Анализирую Excel {file_name}..."):
+                    file_text, num = extract_excel_data(uploaded_file)
+                    excel_analysis = analyze_excel_structure(uploaded_file)
+                st.success(f"✅ Excel: {file_name} ({num} листов)")
+                file_texts.append(("excel", file_name, file_text))
+                
+            else:
+                file_text = extract_text(uploaded_file)
+                if len(file_text) > MAX_FILE_SIZE:
+                    file_text = file_text[:MAX_FILE_SIZE]
+                st.success(f"✅ Файл: {file_name}")
+                file_texts.append(("document", file_name, file_text))
+                
+        except Exception as e:
+            st.error(f"❌ Ошибка {file_name}: {e}")
+    
+    if len(file_texts) > 1:
+        st.write("**Загруженные файлы:**")
+        for i, (ftype, fname, _) in enumerate(file_texts, 1):
+            icon = "📄" if ftype == "document" else "🖼️" if ftype == "image" else "📊"
+            st.write(f"{i}. {icon} {fname}")
 task = st.text_area("Опиши задачу:", height=150, 
     placeholder={
         'science': "Например: 'Напиши научную статью об ИИ в праве'",
@@ -1671,11 +1827,17 @@ with col2:
                             context_parts.append(bt); st.success(f"✅ {len(relevant)} книг")
                 if branch == 'legal' and 'external_ai_opinion' in dir() and external_ai_opinion.strip():
                     context_parts.append(f"# ⚖️ МНЕНИЕ ВНЕШНЕГО ИИ\n\n{external_ai_opinion}\n\n")
-                if file_type == "excel" and file_text:
-                    ec = "# 📊 ДАННЫЕ EXCEL\n\n"
-                    if excel_analysis and excel_analysis['has_financial_data']:
-                        ec += "⚠️ Финансовые данные. Выяви тренды, метрики, аномалии.\n\n"
-                    ec += file_text + "\n\n"; context_parts.append(ec)
+                                # === ОБРАБОТКА ВСЕХ ЗАГРУЖЕННЫХ ФАЙЛОВ ===
+                for idx, (ftype, fname, ftext) in enumerate(file_texts, 1):
+                    if ftype == "excel":
+                        ec = f"# 📊 ФАЙЛ №{idx}: {fname}\n\n"
+                        if excel_analysis and excel_analysis.get('has_financial_data'):
+                            ec += "⚠️ Финансовые данные. Выяви тренды, метрики, аномалии.\n\n"
+                        ec += ftext + "\n\n"
+                        context_parts.append(ec)
+                    elif ftype in ['document', 'image']:
+                        label = "ДОКУМЕНТ" if ftype == "document" else "ИЗОБРАЖЕНИЕ"
+                        context_parts.append(f"# 📄 {label} №{idx}: {fname}\n\n{ftext}\n\n")
                 if 'deep_analysis_articles' in st.session_state and st.session_state['deep_analysis_articles']:
                     at = "# 📚 СТАТЬИ\nИНСТРУКЦИЯ: Цитируй как [1], [2]\n\n"
                     for i, a in enumerate(st.session_state['deep_analysis_articles'], 1):
