@@ -395,18 +395,7 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
-st.markdown("""
-<style>
 
-/* Анимация загрузки */
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
-.stSpinner > div {
-    animation: pulse 1.5s ease-in-out infinite;
-}
 # --- ФУНКЦИИ ДЛЯ ФИНАНСОВЫХ API ---
 def get_cbr_data():
     try:
