@@ -1839,7 +1839,8 @@ with col2:
                 # Для бизнес-ветви - дополнительная кнопка Excel
                 if branch == 'business':
                     st.markdown("---")
-                    st.markdown("""<div class="ai-card" style="border-left: 5px solid #27AE60;"><h3 style="margin: 0 0 10px 0; color: #27AE60;">[Excel] Скачать в Excel</h3><p style="margin: 0; color: #A89F91;">Структурированный отчёт с разделами.</p></div>""", unsafe_allow_html=True)
+                    st.subheader("[Excel] Скачать в Excel", divider="green")
+                    st.caption("Структурированный отчёт с разделами.")
                     
                     excel_wb = openpyxl.Workbook()
                     ws = excel_wb.active
