@@ -1585,7 +1585,7 @@ elif branch == 'business':
                 if 'error' not in cbr:
                     text = f"## 🇷🇺 ЦБ РФ ({cbr.get('date', '')})\n**Ключевая ставка:** {cbr.get('key_rate', 'N/A')}%\n**Курсы:**\n"
                     for code, d in cbr.get('currencies', {}).items():
-                        s = "📈" if d['change'] > 0 else "📉" if d['change'] < 0 else "➡️"
+                        s = "📈" if d['change'] > 0 else "[ПАДЕНИЕ]" if d['change'] < 0 else "➡️"
                         text += f"- **{code}**: {d['value']:.2f} руб {s} ({d['change']:+.2f})\n"
                     financial_parts.append(text); st.success(f"[OK] Ставка: {cbr.get('key_rate', 'N/A')}%")
                 else: st.error(cbr.get('error'))
