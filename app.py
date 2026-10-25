@@ -1359,7 +1359,7 @@ if branch == 'science':
         for i, book in enumerate(st.session_state['library_books'][:5], 1):
             st.markdown(f"**{i}.** {book['title']} - {book['author']} ({book['year']})")
     st.markdown("---")
-    st.markdown("""<div class="ai-card card-search"><h3 style="margin: 0 0 10px 0; color: #5B8DB8;">🔬 Научный поиск</h3>
+    st.markdown("""<div class="ai-card card-search"><h3 style="margin: 0 0 10px 0; color: #5B8DB8;">[НАУКА] Научный поиск</h3>
     <p style="margin: 0; color: #A89F91;">Поиск по научным базам.</p></div>""", unsafe_allow_html=True)
     search_query = st.text_input("Тема поиска:", placeholder="artificial intelligence in civil law")
     col1, col2, col3 = st.columns(3)
