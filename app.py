@@ -1773,7 +1773,7 @@ with col2:
                 st.write(draft)
                 with st.spinner("[ПОИСК] Claude проверяет..."):
                     critique = ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
-                st.markdown("""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️⃣ Критика от Claude</h3></div>""", unsafe_allow_html=True)
+                st.markdown("""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2. Критика от Claude</h3></div>""", unsafe_allow_html=True)
                 st.write(critique)
                 with st.spinner(" Qwen готовит финал..."):
                     final = ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
