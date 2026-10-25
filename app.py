@@ -1114,7 +1114,7 @@ def display_opened_entry(entry):
     if entry.get('file'):
         st.markdown(f"**📎 Файл:** {entry['file']}")
     st.markdown("---")
-    st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️.Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️. Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
     st.write(entry.get('draft', ''))
     st.markdown("---")
     st.markdown("""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️ Критика от Claude</h3></div>""", unsafe_allow_html=True)
