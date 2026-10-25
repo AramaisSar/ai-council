@@ -862,7 +862,7 @@ def analyze_image(file):
     return response.choices[0].message.content
 
 # --- ПРОМПТЫ ДЛЯ РАЗНЫХ ВЕТВЕЙ ---
-    ef get_branch_prompts(branch, task, full_context, draft=None, critique=None):
+    def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
     if branch == 'science':
         mode = st.session_state.get('science_mode', 'Написать статью с нуля')
         
