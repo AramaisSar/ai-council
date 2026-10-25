@@ -864,7 +864,7 @@ def analyze_image(file):
 # --- ПРОМПТЫ ДЛЯ РАЗНЫХ ВЕТВЕЙ ---
     def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
         if branch == 'science':
-        mode = st.session_state.get('science_mode', 'Написать статью с нуля')
+            mode = st.session_state.get('science_mode', 'Написать статью с нуля')
         
         if mode == "Доработать существующую статью по рецензии":
             chatgpt_prompt = f"""Ты - научный ассистент, эксперт по доработке статей. Твоя задача - доработать существующую статью с учётом замечаний рецензента.
