@@ -1195,7 +1195,7 @@ def display_opened_entry(entry):
     branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60', 'grain': '#FFD700'}
     
     st.markdown(f"""<div class="ai-card" style="border-left: 8px solid {branch_colors.get(branch, '#8B5E3C')};">
-        <h3 style="margin: 0; color: {branch_colors.get(branch, '#8B5E3C')};">📜 {entry.get('task', '')[:80]}</h3>
+        <h3 style="margin: 0; color: {branch_colors.get(branch, '#8B5E3C')};"> {entry.get('task', '')[:80]}</h3>
         <p style="margin: 10px 0 0 0; color: #A89F91;">{branch_names.get(branch, '')} • {entry.get('date', '')}</p>
     </div>""", unsafe_allow_html=True)
     st.markdown("---")
