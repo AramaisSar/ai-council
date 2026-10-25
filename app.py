@@ -395,7 +395,50 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+/* === АДАПТИВНЫЙ ИНТЕРФЕЙС ДЛЯ МОБИЛЬНЫХ === */
+@media (max-width: 768px) {
+    /* Уменьшаем заголовки */
+    h1 { font-size: 1.5rem !important; }
+    h2 { font-size: 1.3rem !important; }
+    h3 { font-size: 1.1rem !important; }
+    
+    /* Карточки на всю ширину */
+    .branch-card { margin: 5px 0 !important; }
+    .ai-card { padding: 10px !important; }
+    
+    /* Кнопки на всю ширину */
+    button[kind="primary"] { width: 100% !important; }
+    
+    /* Колонки в один столбец */
+    .stColumn { width: 100% !important; }
+    
+    /* Уменьшаем отступы */
+    .block-container { padding: 1rem !important; }
+    
+    /* Скрываем боковую панель на мобильных */
+    [data-testid="stSidebar"] { display: none !important; }
+}
 
+/* Улучшения для всех экранов */
+.branch-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.branch-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+/* Анимация загрузки */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.stSpinner > div {
+    animation: pulse 1.5s ease-in-out infinite;
+}
 # --- ФУНКЦИИ ДЛЯ ФИНАНСОВЫХ API ---
 def get_cbr_data():
     try:
