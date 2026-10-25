@@ -1867,3 +1867,78 @@ with col2:
                 st.sidebar.success("💾 Сохранено!")
                 st.session_state['show_new_chat'] = True
             except Exception as e: st.error(f"❌ Ошибка: {str(e)}")
+                    # === ЭКСПОРТ В EXCEL (ТОЛЬКО ДЛЯ БИЗНЕС-ВЕТВИ) ===
+    if branch == 'business' and final:
+        st.markdown("---")
+        st.markdown("### 📊 Экспорт в Excel")
+        
+        if st.button("📥 Скачать отчет в Excel", use_container_width=True):
+            try:
+                import openpyxl
+                from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+                
+                wb = openpyxl.Workbook()
+                
+                # Лист 1: Резюме
+                ws1 = wb.active
+                ws1.title = "Резюме"
+                ws1['A1'] = "ФИНАНСОВЫЙ ОТЧЕТ"
+                ws1['A1'].font = Font(size=16, bold=True, color="FFFFFF")
+                ws1['A1'].fill = PatternFill(start_color="27AE60", end_color="27AE60", fill_type="solid")
+                ws1['A1'].alignment = Alignment(horizontal="center")
+                ws1.merge_cells('A1:B1')
+                
+                ws1['A3'] = "Задача:"
+                ws1['A3'].font = Font(bold=True)
+                ws1['B3'] = task
+                
+                ws1['A5'] = "Резюме:"
+                ws1['A5'].font = Font(bold=True)
+                ws1['B5'] = final[:500] if final else ""
+                
+                # Лист 2: Детальный анализ
+                ws2 = wb.create_sheet("Анализ")
+                ws2['A1'] = "ДЕТАЛЬНЫЙ АНАЛИЗ"
+                ws2['A1'].font = Font(size=16, bold=True, color="FFFFFF")
+                ws2['A1'].fill = PatternFill(start_color="2C3E50", end_color="2C3E50", fill_type="solid")
+                ws2['A1'].alignment = Alignment(horizontal="center")
+                ws2.merge_cells('A1:B1')
+                
+                ws2['A3'] = "Полный текст анализа:"
+                ws2['A3'].font = Font(bold=True)
+                ws2['B3'] = final if final else ""
+                ws2.column_dimensions['B'].width = 80
+                
+                # Лист 3: Рекомендации
+                ws3 = wb.create_sheet("Рекомендации")
+                ws3['A1'] = "РЕКОМЕНДАЦИИ"
+                ws3['A1'].font = Font(size=16, bold=True, color="FFFFFF")
+                ws3['A1'].fill = PatternFill(start_color="E74C3C", end_color="E74C3C", fill_type="solid")
+                ws3['A1'].alignment = Alignment(horizontal="center")
+                ws3.merge_cells('A1:B1')
+                
+                ws3['A3'] = "Ключевые рекомендации:"
+                ws3['A3'].font = Font(bold=True)
+                ws3['B3'] = final[-500:] if final else ""
+                
+                # Сохранение
+                import tempfile
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+                    wb.save(tmp.name)
+                    tmp_path = tmp.name
+                
+                with open(tmp_path, "rb") as f:
+                    st.download_button(
+                        label="⬇️ Скачать Excel",
+                        data=f,
+                        file_name=f"Финансовый_отчет_{datetime.now().strftime('%d%m%Y')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True
+                    )
+                
+                import os
+                os.remove(tmp_path)
+                st.success("✅ Excel файл готов!")
+                
+            except Exception as e:
+                st.error(f"Ошибка создания Excel: {e}")
