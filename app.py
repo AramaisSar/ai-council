@@ -1083,7 +1083,7 @@ def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
 
 Создай финальный отчёт для презентации."""
 
-    return chatgpt_prompt, claude_prompt, qwen_promptpt
+    return chatgpt_prompt, claude_prompt, qwen_prompt
 
 # --- ОТОБРАЖЕНИЕ ОТКРЫТОЙ БЕСЕДЫ ---
 def display_opened_entry(entry):
