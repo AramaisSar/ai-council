@@ -1265,7 +1265,7 @@ if not st.session_state['branch']:
     with col1:
         st.markdown("""
         <div class="branch-card branch-science">
-            <h3 style="margin: 0; font-size: 2.2rem;">🎓 Наука</h3>
+            <h3 style="margin: 0; font-size: 2.2rem;">Наука</h3>
         </div>
         """, unsafe_allow_html=True)
         if st.button("🚀 НАУКА", key="btn_science", use_container_width=True):
