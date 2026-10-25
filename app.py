@@ -1101,7 +1101,7 @@ def display_opened_entry(entry):
     if not entry:
         return
     branch = entry.get('branch', 'science')
-    branch_names = {'science': '🎓 Наука', 'legal': '⚖️ Юридическая практика', 'business': '💼 Бизнес-консалтинг', 'grain': '🌾 Зерновой бизнес'}
+    branch_names = {'science': '[НАУКА] Наука', 'legal': '[ПРАВО] Юридическая практика', 'business': '[БИЗНЕС] Бизнес-консалтинг', 'grain': '[ЗЕРНО] Зерновой бизнес'}
     branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60', 'grain': '#FFD700'}
     
     st.markdown(f"""<div class="ai-card" style="border-left: 8px solid {branch_colors.get(branch, '#8B5E3C')};">
@@ -1215,13 +1215,13 @@ if visible_history:
             if st.button("🗑", key=f"del_{entry.get('id', '')}", help="Удалить"):
                 delete_history_entry(entry.get("id"))
                 if st.session_state.get('open_entry') == entry.get('id'): st.session_state['open_entry'] = None
-                st.sidebar.success("✅ Удалено"); st.rerun()
+                st.sidebar.success("[OK] Удалено"); st.rerun()
 else:
     st.sidebar.info("Пока нет бесед")
 
 st.sidebar.markdown("---")
 if load_key(): st.sidebar.success("🔑 Ключ активен")
-else: st.sidebar.error("❌ Ключ не найден")
+else: st.sidebar.error("[X] Ключ не найден")
 
 if st.session_state['branch']:
     if st.sidebar.button("🏠 Вернуться к выбору ветви"):
@@ -1277,10 +1277,10 @@ if not st.session_state['branch']:
     with col2:
         st.markdown("""
         <div class="branch-card branch-legal">
-            <h3 style="margin: 0; font-size: 2.2rem;">⚖️ Юридическая практика</h3>
+            <h3 style="margin: 0; font-size: 2.2rem;">Юридическая практика</h3>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("⚖️ ЮРИДИЧЕСКАЯ ПРАКТИКА", key="btn_legal", use_container_width=True):
+        if st.button("[ПРАВО] ЮРИДИЧЕСКАЯ ПРАКТИКА", key="btn_legal", use_container_width=True):
             st.session_state['branch'] = 'legal'
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
@@ -1289,10 +1289,10 @@ if not st.session_state['branch']:
     with col3:
         st.markdown("""
         <div class="branch-card branch-business">
-            <h3 style="margin: 0; font-size: 2.2rem;">💼 Бизнес-консалтинг</h3>
+            <h3 style="margin: 0; font-size: 2.2rem;">[БИЗНЕС] Бизнес-консалтинг</h3>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("💼 БИЗНЕС-КОНСАЛТИНГ", key="btn_business", use_container_width=True):
+        if st.button("[БИЗНЕС] БИЗНЕС-КОНСАЛТИНГ", key="btn_business", use_container_width=True):
             st.session_state['branch'] = 'business'
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
@@ -1301,10 +1301,10 @@ if not st.session_state['branch']:
     with col4:
         st.markdown("""
         <div class="branch-card branch-grain">
-            <h3 style="margin: 0; font-size: 2.2rem;">🌾 Зерновой бизнес</h3>
+            <h3 style="margin: 0; font-size: 2.2rem;">[ЗЕРНО] Зерновой бизнес</h3>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("🌾 ЗЕРНОВОЙ БИЗНЕС", key="btn_grain", use_container_width=True):
+        if st.button("[ЗЕРНО] ЗЕРНОВОЙ БИЗНЕС", key="btn_grain", use_container_width=True):
             st.session_state['branch'] = 'grain'
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
@@ -1313,7 +1313,7 @@ if not st.session_state['branch']:
     st.stop()
 # === РАБОТА ВНУТРИ ВЕТВИ ===
 branch = st.session_state['branch']
-branch_names = {'science': '🎓 Наука', 'legal': '⚖️ Юридическая практика', 'business': '💼 Бизнес-консалтинг', 'grain': '🌾 Зерновой бизнес'}
+branch_names = {'science': '[НАУКА] Наука', 'legal': '[ПРАВО] Юридическая практика', 'business': '[БИЗНЕС] Бизнес-консалтинг', 'grain': '[ЗЕРНО] Зерновой бизнес'}
 branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60', 'grain': '#FFD700'}
 project_label = selected_project['name'] if selected_project else '💬 Быстрый диалог'
 
@@ -1350,7 +1350,7 @@ if branch == 'science':
                 with st.spinner("Сканирую..."):
                     books = scan_library_folder(library_path)
                     if isinstance(books, dict) and 'error' in books: st.error(books['error'])
-                    else: st.success(f"✅ Найдено {len(books)} книг!"); st.session_state['library_books'] = books
+                    else: st.success(f"[OK] Найдено {len(books)} книг!"); st.session_state['library_books'] = books
             else: st.warning("Введи путь")
     with col2:
         use_library = st.checkbox("📖 Использовать библиотеку", value=False)
@@ -1366,7 +1366,7 @@ if branch == 'science':
     with col1: use_cyberleninka = st.checkbox("🇺 КиберЛенинка", value=True)
     with col2: use_openalex = st.checkbox("🌍 OpenAlex", value=True)
     with col3: use_semantic = st.checkbox("🤖 Semantic Scholar", value=True)
-    deep_analysis = st.checkbox("🎓 Глубокое исследование", value=True)
+    deep_analysis = st.checkbox("[НАУКА] Глубокое исследование", value=True)
     if st.button("🔍 Найти статьи", use_container_width=True):
         if search_query.strip():
             all_articles = []
@@ -1382,13 +1382,13 @@ if branch == 'science':
                     articles_with_text = []
                     for article in full_text[:MAX_ARTICLES]:
                         text = download_and_extract_pdf(article['pdf_url']); article['full_text'] = text; articles_with_text.append(article)
-                st.session_state['deep_analysis_articles'] = articles_with_text; st.success(f"✅ Скачано {len(articles_with_text)}!")
+                st.session_state['deep_analysis_articles'] = articles_with_text; st.success(f"[OK] Скачано {len(articles_with_text)}!")
             else:
                 st.session_state['search_results'] = all_articles; st.success(f"Найдено: {len(all_articles)}")
         else: st.warning("Введи тему")
 
 elif branch == 'legal':
-    st.markdown("""<div class="ai-card card-external"><h3 style="margin: 0 0 10px 0; color: #6B9080;">⚖️ Мнение внешнего ИИ</h3>
+    st.markdown("""<div class="ai-card card-external"><h3 style="margin: 0 0 10px 0; color: #6B9080;">[ПРАВО] Мнение внешнего ИИ</h3>
     <p style="margin: 0; color: #A89F91;">Cognevia, ПравоТех, Doczilla (необязательно).</p></div>""", unsafe_allow_html=True)
     external_ai_opinion = st.text_area("Ответ от внешнего ИИ:", height=120, placeholder="Скопируй анализ от Cognevia...")
     st.markdown("---")
@@ -1400,7 +1400,7 @@ elif branch == 'legal':
     ], index=0)
 elif branch == 'grain':
     st.markdown("""<div class="ai-card" style="border-left: 5px solid #FFD700; background: rgba(255, 215, 0, 0.05);">
-    <h3 style="margin: 0 0 10px 0; color: #FFD700;">🌾 Калькулятор логистики и закупки зерна</h3>
+    <h3 style="margin: 0 0 10px 0; color: #FFD700;">[ЗЕРНО] Калькулятор логистики и закупки зерна</h3>
     <p style="margin: 0; color: #A89F91;">Расчёт расстояния, стоимости перевозки и итоговой цены с НДС.</p></div>""", unsafe_allow_html=True)
     
     # БЛОК 1
@@ -1419,7 +1419,7 @@ elif branch == 'grain':
                     km, err, src = get_route_distance_km(load_addr, unload_addr)
                     if km:
                         st.session_state['grain_distance'] = km
-                        st.success(f"✅ Расстояние: {km:.1f} км (источник: {src})")
+                        st.success(f"[OK] Расстояние: {km:.1f} км (источник: {src})")
                     else:
                         st.error(err)
             else:
@@ -1435,7 +1435,7 @@ elif branch == 'grain':
         st.markdown(f"**Проверка геокодеров на адресе:** {test_addr}")
         
         yk = load_yandex_key()
-        st.write(f"**1. Ключ Яндекс найден:** {'ДА ✅' if yk else 'НЕТ ❌'}")
+        st.write(f"**1. Ключ Яндекс найден:** {'ДА [OK]' if yk else 'НЕТ [X]'}")
         if yk:
             try:
                 r = requests.get("https://geocode-maps.yandex.ru/1.x/",
@@ -1475,19 +1475,19 @@ elif branch == 'grain':
     st.markdown("---")
     
     # БЛОК 3
-    st.markdown("#### 💼 Блок 3. Твой заработок")
+    st.markdown("#### [БИЗНЕС] Блок 3. Твой заработок")
     margin = st.number_input("Заработок за 1 тонну (руб):", min_value=0.0, value=500.0, step=50.0)
     
     st.markdown("---")
     
        # БЛОК 4
-    st.markdown("#### 🌾 Блок 4. Цена сделки (Z)")
+    st.markdown("#### [ЗЕРНО] Блок 4. Цена сделки (Z)")
     purchase = st.number_input("Цена, по которой экспортер покупает (руб за 1 тонну):", min_value=0.0, value=12000.0, step=100.0)
     
     st.markdown("---")
     
     # БЛОК 5
-    st.markdown("#### 📊 Блок 5. Итоговая цена")
+    st.markdown("#### [Excel] Блок 5. Итоговая цена")
     price_no_vat = purchase - logistics_cost - margin
     price_vat = price_no_vat * 1.10
     
@@ -1518,7 +1518,7 @@ elif branch == 'business':
                 df = pd.read_csv(bank_statement, encoding='utf-8', on_bad_lines='skip')
             else:
                 df = pd.read_excel(bank_statement)
-            st.success(f"✅ Выписка загружена: {len(df)} транзакций")
+            st.success(f"[OK] Выписка загружена: {len(df)} транзакций")
             st.info(f"**Столбцы:** {', '.join(df.columns.tolist())}")
             date_cols = [col for col in df.columns if any(k in col.lower() for k in ['дата', 'date', 'время', 'time'])]
             amount_cols = [col for col in df.columns if any(k in col.lower() for k in ['сумма', 'amount', 'списание', 'debit', 'зачисление', 'credit', 'операция'])]
@@ -1528,12 +1528,12 @@ elif branch == 'business':
             st.session_state['bank_date_col'] = date_cols[0] if date_cols else None
             st.session_state['bank_amount_col'] = amount_cols[0] if amount_cols else None
             with st.expander("👁️ Первые 10 транзакций"): st.dataframe(df.head(10))
-        except Exception as e: st.error(f"❌ Ошибка: {str(e)}")
+        except Exception as e: st.error(f"[X] Ошибка: {str(e)}")
     
     st.markdown("---")
     
     # Генератор бизнес-планов
-    st.markdown("""<div class="ai-card card-finance"><h3 style="margin: 0 0 10px 0; color: #E74C3C;">💼 Генератор бизнес-планов</h3>
+    st.markdown("""<div class="ai-card card-finance"><h3 style="margin: 0 0 10px 0; color: #E74C3C;">[БИЗНЕС] Генератор бизнес-планов</h3>
     <p style="margin: 0; color: #A89F91;">Создай бизнес-план с финансовой моделью.</p></div>""", unsafe_allow_html=True)
     st.markdown("**Параметры бизнес-плана:**")
     col1, col2 = st.columns(2)
@@ -1558,13 +1558,13 @@ elif branch == 'business':
                         'monthly_revenue': monthly_revenue, 'monthly_costs': monthly_costs,
                         'growth_rate': growth_rate, 'planning_period': planning_period, 'discount_rate': discount_rate, 'excel_path': excel_path
                     }
-                    st.success("✅ Бизнес-план подготовлен! Опиши задачу ниже.")
+                    st.success("[OK] Бизнес-план подготовлен! Опиши задачу ниже.")
                     with open(excel_path, "rb") as f:
                         st.download_button(label="📥 Скачать финмодель Excel", data=f,
                             file_name=f"Финмодель_{business_name}_{datetime.now().strftime('%d%m%Y')}.xlsx",
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                     os.remove(excel_path)
-                except Exception as e: st.error(f"❌ Ошибка: {str(e)}")
+                except Exception as e: st.error(f"[X] Ошибка: {str(e)}")
         else: st.warning("Введи название бизнеса")
     
     st.markdown("---")
@@ -1587,7 +1587,7 @@ elif branch == 'business':
                     for code, d in cbr.get('currencies', {}).items():
                         s = "📈" if d['change'] > 0 else "📉" if d['change'] < 0 else "➡️"
                         text += f"- **{code}**: {d['value']:.2f} руб {s} ({d['change']:+.2f})\n"
-                    financial_parts.append(text); st.success(f"✅ Ставка: {cbr.get('key_rate', 'N/A')}%")
+                    financial_parts.append(text); st.success(f"[OK] Ставка: {cbr.get('key_rate', 'N/A')}%")
                 else: st.error(cbr.get('error'))
         if use_yahoo and yahoo_tickers.strip():
             with st.spinner("Yahoo Finance..."):
@@ -1595,11 +1595,11 @@ elif branch == 'business':
                 yahoo_data = []
                 for ticker in tickers:
                     data = get_yahoo_finance_data(ticker, '1mo'); yahoo_data.append(data)
-                    if 'error' not in data: st.success(f"✅ {ticker}: {data.get('current_price', 0):.2f}")
-                    else: st.error(f"❌ {ticker}: {data.get('error')}")
+                    if 'error' not in data: st.success(f"[OK] {ticker}: {data.get('current_price', 0):.2f}")
+                    else: st.error(f"[X] {ticker}: {data.get('error')}")
                 st.session_state['yahoo_data'] = yahoo_data
         if financial_parts or 'yahoo_data' in st.session_state:
-            full_fin = "# 📊 АКТУАЛЬНЫЕ ФИНАНСОВЫЕ ДАННЫЕ\n\n"
+            full_fin = "# [Excel] АКТУАЛЬНЫЕ ФИНАНСОВЫЕ ДАННЫЕ\n\n"
             for p in financial_parts: full_fin += p + "\n"
             if 'yahoo_data' in st.session_state:
                 full_fin += "##  Yahoo Finance\n"
@@ -1609,7 +1609,7 @@ elif branch == 'business':
                         full_fin += f"- Цена: {d.get('current_price', 0):.2f} {d.get('currency', '')}\n"
                         if d.get('price_change_percent'): full_fin += f"- Изменение: {d['price_change_percent']:+.2f}%\n"
                         full_fin += "\n"
-            st.session_state['financial_api_data'] = full_fin; st.success("✅ Данные добавлены!")
+            st.session_state['financial_api_data'] = full_fin; st.success("[OK] Данные добавлены!")
     
     # Быстрый анализ выписки
     if 'bank_statement_df' in st.session_state:
@@ -1654,30 +1654,30 @@ if uploaded_files:
             if fn.endswith(('.jpg', '.jpeg', '.png')):
                 with st.spinner(f"Анализирую изображение {file_name}..."):
                     file_text = analyze_image(uploaded_file)
-                st.success(f"✅ Изображение: {file_name}")
+                st.success(f"[OK] Изображение: {file_name}")
                 file_texts.append(("image", file_name, file_text))
                 
             elif fn.endswith(('.xlsx', '.xls')):
                 with st.spinner(f"Анализирую Excel {file_name}..."):
                     file_text, num = extract_excel_data(uploaded_file)
                     excel_analysis = analyze_excel_structure(uploaded_file)
-                st.success(f"✅ Excel: {file_name} ({num} листов)")
+                st.success(f"[OK] Excel: {file_name} ({num} листов)")
                 file_texts.append(("excel", file_name, file_text))
                 
             else:
                 file_text = extract_text(uploaded_file)
                 if len(file_text) > MAX_FILE_SIZE:
                     file_text = file_text[:MAX_FILE_SIZE]
-                st.success(f"✅ Файл: {file_name}")
+                st.success(f"[OK] Файл: {file_name}")
                 file_texts.append(("document", file_name, file_text))
                 
         except Exception as e:
-            st.error(f"❌ Ошибка {file_name}: {e}")
+            st.error(f"[X] Ошибка {file_name}: {e}")
     
     if len(file_texts) > 1:
         st.write("**Загруженные файлы:**")
         for i, (ftype, fname, _) in enumerate(file_texts, 1):
-            icon = "📄" if ftype == "document" else "🖼️" if ftype == "image" else "📊"
+            icon = "[DOC]" if ftype == "document" else "🖼️" if ftype == "image" else "[Excel]"
             st.write(f"{i}. {icon} {fname}")
 task = st.text_area("Опиши задачу:", height=150, 
     placeholder={
@@ -1736,27 +1736,27 @@ with col2:
                             for i, book in enumerate(relevant, 1):
                                 with st.status(f"Загружаю: {book['title'][:50]}..."):
                                     bt += f"## [К{i}] {book['title']}\n**Автор:** {book['author']} | **Год:** {book['year']}\n\n{load_book_content(book['path'])[:10000]}\n\n---\n\n"
-                            context_parts.append(bt); st.success(f"✅ {len(relevant)} книг")
+                            context_parts.append(bt); st.success(f"[OK] {len(relevant)} книг")
                 if branch == 'legal' and 'external_ai_opinion' in dir() and external_ai_opinion.strip():
-                    context_parts.append(f"# ⚖️ МНЕНИЕ ВНЕШНЕГО ИИ\n\n{external_ai_opinion}\n\n")
+                    context_parts.append(f"# [ПРАВО] МНЕНИЕ ВНЕШНЕГО ИИ\n\n{external_ai_opinion}\n\n")
                                 # === ОБРАБОТКА ВСЕХ ЗАГРУЖЕННЫХ ФАЙЛОВ ===
                 for idx, (ftype, fname, ftext) in enumerate(file_texts, 1):
                     if ftype == "excel":
-                        ec = f"# 📊 ФАЙЛ №{idx}: {fname}\n\n"
+                        ec = f"# [Excel] ФАЙЛ №{idx}: {fname}\n\n"
                         if excel_analysis and excel_analysis.get('has_financial_data'):
                             ec += "⚠️ Финансовые данные. Выяви тренды, метрики, аномалии.\n\n"
                         ec += ftext + "\n\n"
                         context_parts.append(ec)
                     elif ftype in ['document', 'image']:
                         label = "ДОКУМЕНТ" if ftype == "document" else "ИЗОБРАЖЕНИЕ"
-                        context_parts.append(f"# 📄 {label} №{idx}: {fname}\n\n{ftext}\n\n")
+                        context_parts.append(f"# [DOC] {label} №{idx}: {fname}\n\n{ftext}\n\n")
                 if 'deep_analysis_articles' in st.session_state and st.session_state['deep_analysis_articles']:
                     at = "# 📚 СТАТЬИ\nИНСТРУКЦИЯ: Цитируй как [1], [2]\n\n"
                     for i, a in enumerate(st.session_state['deep_analysis_articles'], 1):
                         at += f"## [{i}] {a['title']}\n**Авторы:** {a['authors']} | **Год:** {a['year']}\n\n{a.get('full_text', '')[:10000]}\n\n---\n\n"
                     context_parts.append(at)
                 if file_type in ['document', 'image'] and file_text:
-                    context_parts.append(f"# 📄 ФАЙЛ\n\n{file_text}\n\n")
+                    context_parts.append(f"# [DOC] ФАЙЛ\n\n{file_text}\n\n")
                 full_context = "\n".join(context_parts) if context_parts else ""
                 instructions = """# ⚠️ ИНСТРУКЦИИ:
 1. Используй ТОЛЬКО информацию из источников.
@@ -1777,12 +1777,12 @@ with col2:
                 st.write(critique)
                 with st.spinner(" Qwen готовит финал..."):
                     final = ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
-                st.markdown("""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️ ✅ Финал от Qwen</h3></div>""", unsafe_allow_html=True)
+                st.markdown("""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️ [OK] Финал от Qwen</h3></div>""", unsafe_allow_html=True)
                 st.write(final)
                                            # === КНОПКИ СКАЧИВАНИЯ ===
                 st.markdown("---")
                 st.markdown("""<div class="ai-card" style="background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%); color: white; text-align: center;">
-                    <h3 style="margin: 0; color: white;">✅ Задача выполнена!</h3>
+                    <h3 style="margin: 0; color: white;">[OK] Задача выполнена!</h3>
                     <p style="margin: 10px 0 0 0; opacity: 0.9;">Выбери, что скачать:</p>
                 </div>""", unsafe_allow_html=True)
                 
@@ -1807,7 +1807,7 @@ with col2:
                         final_doc.save(tmp.name); final_path = tmp.name
                     with open(final_path, "rb") as f:
                         st.download_button(
-                            label="📄 Скачать готовый документ",
+                            label="[DOC] Скачать готовый документ",
                             data=f,
                             file_name=f"{safe_task}_{date_str}.docx",
                             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -1839,7 +1839,7 @@ with col2:
                 # Для бизнес-ветви - дополнительная кнопка Excel
                 if branch == 'business':
                     st.markdown("---")
-                    st.markdown("""<div class="ai-card" style="border-left: 5px solid #27AE60;"><h3 style="margin: 0 0 10px 0; color: #27AE60;">📊 Скачать в Excel (для бизнес-анализа)</h3>
+                    st.markdown("""<div class="ai-card" style="border-left: 5px solid #27AE60;"><h3 style="margin: 0 0 10px 0; color: #27AE60;">[Excel] Скачать в Excel (для бизнес-анализа)</h3>
                     <p style="margin: 0; color: #A89F91;">Структурированный отчёт с разделами.</p></div>""", unsafe_allow_html=True)
                     
                     excel_wb = openpyxl.Workbook()
@@ -1880,7 +1880,7 @@ with col2:
                         excel_wb.save(tmp.name); excel_path = tmp.name
                     with open(excel_path, "rb") as f:
                         st.download_button(
-                            label="📊 Скачать структурированный Excel",
+                            label="[Excel] Скачать структурированный Excel",
                             data=f,
                             file_name=f"Бизнес_отчёт_{datetime.now().strftime('%d%m%Y_%H%M')}.xlsx",
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1910,11 +1910,11 @@ with col2:
                     "draft": draft, "critique": critique, "final": final})
                 st.sidebar.success("💾 Сохранено!")
                 st.session_state['show_new_chat'] = True
-            except Exception as e: st.error(f"❌ Ошибка: {str(e)}")
+            except Exception as e: st.error(f"[X] Ошибка: {str(e)}")
                     # === ЭКСПОРТ В EXCEL (ТОЛЬКО ДЛЯ БИЗНЕС-ВЕТВИ) ===
     if branch == 'business' and final:
         st.markdown("---")
-        st.markdown("### 📊 Экспорт в Excel")
+        st.markdown("### [Excel] Экспорт в Excel")
         
         if st.button("📥 Скачать отчет в Excel", use_container_width=True):
             try:
@@ -1982,7 +1982,7 @@ with col2:
                 
                 import os
                 os.remove(tmp_path)
-                st.success("✅ Excel файл готов!")
+                st.success("[OK] Excel файл готов!")
                 
             except Exception as e:
                 st.error(f"Ошибка создания Excel: {e}")
