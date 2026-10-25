@@ -1250,7 +1250,7 @@ if not st.session_state['branch']:
     st.markdown("""
     <div class="main-header">
         <div>
-            <h1 style="margin: 0;">🤖 Совет ИИ</h1>
+            <h1 style="margin: 0;">[AI] Совет ИИ</h1>
             <p style="margin: 10px 0 0 0; font-size: 1.1rem; opacity: 0.85;">Три разума. Одна задача. Идеальный результат.</p>
         </div>
         <p style="margin: 0; font-size: 1rem; opacity: 0.75; max-width: 450px; text-align: right; line-height: 1.6;">
