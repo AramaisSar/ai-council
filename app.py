@@ -1777,7 +1777,7 @@ with col2:
                 st.write(critique)
                 with st.spinner(" Qwen готовит финал..."):
                     final = ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
-                st.markdown("""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3️ [OK] Финал от Qwen</h3></div>""", unsafe_allow_html=True)
+                st.markdown("""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3. Финал от Qwen</h3></div>""", unsafe_allow_html=True)
                 st.write(final)
                                            # === КНОПКИ СКАЧИВАНИЯ ===
                 st.markdown("---")
