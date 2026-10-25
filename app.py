@@ -1769,7 +1769,7 @@ with col2:
                 
                 with st.spinner("📝 ChatGPT пишет..."):
                     draft = ask(MODEL_CHATGPT, chatgpt_prompt)
-                st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️⃣ Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
+                st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️. Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
                 st.write(draft)
                 with st.spinner("🔍 Claude проверяет..."):
                     critique = ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
