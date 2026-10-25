@@ -1783,8 +1783,7 @@ with col2:
                 st.markdown("---")
                 st.markdown("""<div class="ai-card" style="background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%); color: white; text-align: center;">
                     <h3 style="margin: 0; color: white;">[OK] Задача выполнена!</h3>
-                    <p style="margin: 10px 0 0 0; opacity: 0.9;">Выбери, что скачать:</p>
-                </div>""", unsafe_allow_html=True)
+                    st.info("Выбери, что скачать:")
                 
                 # Формируем имя файла из задачи
                 safe_task = task[:60].strip()
