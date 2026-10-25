@@ -1717,7 +1717,40 @@ task = st.text_area("Опиши задачу:", height=150,
         'legal': "Например: 'Составь договор купли-продажи автомобиля'",
         'business': "Например: 'Проанализируй выписку и найди причины убытков'"
     }.get(branch, ""))
-
+    # === ГОЛОСОВОЙ ВВОД ===
+    st.markdown("""
+    <script>
+    function startVoiceInput() {
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'ru-RU';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            const textarea = document.querySelector('textarea[aria-label="Задача:"]');
+            if (textarea) {
+                textarea.value = transcript;
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        };
+        
+        recognition.onerror = function(event) {
+            alert('Ошибка распознавания речи: ' + event.error);
+        };
+        
+        recognition.start();
+    }
+    </script>
+    """, unsafe_allow_html=True)
+    
+    if st.button("🎤 Голосовой ввод", use_container_width=True):
+        st.markdown("""
+        <script>
+        startVoiceInput();
+        </script>
+        """, unsafe_allow_html=True)
+        st.info("🎙️ Говори четко... Распознавание начнется автоматически.")
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     if st.button("🚀 Запустить обсуждение", use_container_width=True):
