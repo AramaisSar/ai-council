@@ -500,7 +500,7 @@ def geocode_nominatim(address):
     return None
 
 def geocode_address(address):
-    """Пробует геокодеры по очереди: Яндекс → Photon → OpenStreetMap"""
+    """Пробует геокодеры по очереди: Яндекс - Photon - OpenStreetMap"""
     yandex_key = load_yandex_key()
     variants = [address, normalize_address(address), address + ", Россия"]
     
@@ -531,7 +531,7 @@ def get_route_distance_km(addr1, addr2):
         response.raise_for_status()
         data = response.json()
         if data.get('routes'):
-            return data['routes'][0]['distance'] / 1000.0, None, f"{src1} → {src2}"
+            return data['routes'][0]['distance'] / 1000.0, None, f"{src1} - {src2}"
         return None, "Маршрут не построен.", None
     except Exception as e:
         return None, f"Ошибка маршрута: {str(e)}", None
@@ -1196,7 +1196,7 @@ def display_opened_entry(entry):
     
     st.markdown(f"""<div class="ai-card" style="border-left: 8px solid {branch_colors.get(branch, '#8B5E3C')};">
         <h3 style="margin: 0; color: {branch_colors.get(branch, '#8B5E3C')};"> {entry.get('task', '')[:80]}</h3>
-        <p style="margin: 10px 0 0 0; color: #A89F91;">{branch_names.get(branch, '')} • {entry.get('date', '')}</p>
+        <p style="margin: 10px 0 0 0; color: #A89F91;">{branch_names.get(branch, '')} - {entry.get('date', '')}</p>
     </div>""", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("### 📝 Задача")
@@ -1530,7 +1530,7 @@ elif branch == 'grain':
             try:
                 r = requests.get("https://geocode-maps.yandex.ru/1.x/",
                     params={'apikey': yk, 'geocode': test_addr, 'format': 'json', 'results': 1}, timeout=15)
-                st.write(f"**Яндекс:** статус {r.status_code} → {r.text[:200]}")
+                st.write(f"**Яндекс:** статус {r.status_code} - {r.text[:200]}")
             except Exception as e:
                 st.write(f"**Яндекс:** ошибка {str(e)}")
         else:
@@ -1538,7 +1538,7 @@ elif branch == 'grain':
         
         try:
             r = requests.get("https://photon.komoot.io/api/", params={'q': test_addr, 'limit': 1}, timeout=15)
-            st.write(f"**2. Photon:** статус {r.status_code} → {r.text[:200]}")
+            st.write(f"**2. Photon:** статус {r.status_code} - {r.text[:200]}")
         except Exception as e:
             st.write(f"**2. Photon:** ошибка {str(e)}")
         
@@ -1546,7 +1546,7 @@ elif branch == 'grain':
             r = requests.get("https://nominatim.openstreetmap.org/search",
                 params={'q': test_addr, 'format': 'json', 'limit': 1},
                 headers={'User-Agent': 'ai-council-grain/1.0'}, timeout=15)
-            st.write(f"**3. Nominatim:** статус {r.status_code} → {r.text[:200]}")
+            st.write(f"**3. Nominatim:** статус {r.status_code} - {r.text[:200]}")
         except Exception as e:
             st.write(f"**3. Nominatim:** ошибка {str(e)}")
     
