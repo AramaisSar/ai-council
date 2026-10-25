@@ -862,7 +862,7 @@ def analyze_image(file):
     return response.choices[0].message.content
 
 # --- ПРОМПТЫ ДЛЯ РАЗНЫХ ВЕТВЕЙ ---
-        if branch == 'science':
+if branch == 'science':
         mode = st.session_state.get('science_mode', 'Написать статью с нуля')
         
         if mode == "Доработать существующую статью по рецензии":
