@@ -999,36 +999,10 @@ def analyze_image(file):
 
 Создай финальную версию документа."""
 
-    else:  # business
-        business_context = ""
-        if 'business_plan_data' in st.session_state:
-            bp = st.session_state['business_plan_data']
-            business_context = f"""
-## ДАННЫЕ БИЗНЕС-ПЛАНА:
-- Название: {bp['name']}
-- Тип: {bp['type']}
-- Инвестиции: {bp['investment']:,} руб
-- Месячная выручка: {bp['monthly_revenue']:,} руб
-- Месячные расходы: {bp['monthly_costs']:,} руб
-- Рост: {bp['growth_rate']}%/мес
-- Период: {bp['planning_period']} мес
-"""
-        
-        bank_context = ""
-        if 'bank_statement_df' in st.session_state:
-            df = st.session_state['bank_statement_df']
-            bank_context = f"\n## БАНКОВСКАЯ ВЫПИСКА: {len(df)} транзакций\n"
-            if st.session_state.get('bank_amount_col'):
-                ac = st.session_state['bank_amount_col']
-                bank_context += f"- Сумма операций: {df[ac].sum():,.2f} руб\n"
-                bank_context += f"- Средняя: {df[ac].mean():,.2f} руб\n"
-                bank_context += f"- Макс: {df[ac].max():,.2f} руб\n"
-        
+    else:
         chatgpt_prompt = f"""Ты - бизнес-аналитик и финансовый консультант уровня McKinsey/BCG с опытом CFO. Проведи глубокий ФИНАНСОВЫЙ АНАЛИЗ.
 
 {full_context}
-{business_context}
-{bank_context}
 
 ## ЗАДАЧА: {task}
 
@@ -1069,8 +1043,6 @@ def analyze_image(file):
         claude_prompt = f"""Ты - финансовый аудитор из Big4 (Deloitte, PwC). Проверь отчёт.
 
 {full_context}
-{business_context}
-{bank_context}
 
 ## ЗАДАЧА: {task}
 ## ОТЧЁТ: {draft}
@@ -1092,8 +1064,6 @@ def analyze_image(file):
         qwen_prompt = f"""Ты - инвестиционный консультант и стратег с опытом CFO. Создай ФИНАЛЬНУЮ ВЕРСИЮ.
 
 {full_context}
-{business_context}
-{bank_context}
 
 ## ЗАДАЧА: {task}
 ## ЧЕРНОВИК: {draft}
