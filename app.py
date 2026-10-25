@@ -863,8 +863,8 @@ def analyze_image(file):
 
 # --- ПРОМПТЫ ДЛЯ РАЗНЫХ ВЕТВЕЙ ---
     def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
-        if branch == 'science':
-            mode = st.session_state.get('science_mode', 'Написать статью с нуля')
+    if branch == 'science':
+        mode = st.session_state.get('science_mode', 'Написать статью с нуля')
         
         if mode == "Доработать существующую статью по рецензии":
             chatgpt_prompt = f"""Ты - научный ассистент, эксперт по доработке статей. Твоя задача - доработать существующую статью с учётом замечаний рецензента.
@@ -932,7 +932,7 @@ def analyze_image(file):
 Исправь замечания, добавь цитаты, оформи список литературы.
 Если это доработка по рецензии - добавь в конец ОТВЕТ НА РЕЦЕНЗИЮ."""
 
-       elif branch == 'legal':
+    elif branch == 'legal':
         chatgpt_prompt = f"""Ты - практикующий юрист с 15-летним стажем в судебных спорах. Твоя задача - изучить ВСЕ загруженные документы и подготовить юридически грамотный отзыв.
 
 {full_context}
@@ -1083,7 +1083,7 @@ def analyze_image(file):
 
 Создай финальный отчёт для презентации."""
 
-    return chatgpt_prompt, claude_prompt, qwen_prompt
+    return chatgpt_prompt, claude_prompt, qwen_promptpt
 
 # --- ОТОБРАЖЕНИЕ ОТКРЫТОЙ БЕСЕДЫ ---
 def display_opened_entry(entry):
