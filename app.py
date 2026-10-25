@@ -1392,7 +1392,7 @@ elif branch == 'legal':
     <p style="margin: 0; color: #A89F91;">Cognevia, ПравоТех, Doczilla (необязательно).</p></div>""", unsafe_allow_html=True)
     external_ai_opinion = st.text_area("Ответ от внешнего ИИ:", height=120, placeholder="Скопируй анализ от Cognevia...")
     st.markdown("---")
-    st.markdown("""<div class="ai-card"><h3 style="margin: 0 0 10px 0; color: #2C3E50;">📋 Тип документа</h3>
+    st.markdown("""<div class="ai-card"><h3 style="margin: 0 0 10px 0; color: #2C3E50;">[СПИСОК] Тип документа</h3>
     <p style="margin: 0; color: #A89F91;">Выбери тип - поможет ИИ понять структуру.</p></div>""", unsafe_allow_html=True)
     doc_type = st.selectbox("Тип документа:", [
         "Договор (купли-продажи, аренды, услуг)", "Исковое заявление", "Претензия",
