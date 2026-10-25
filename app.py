@@ -1340,12 +1340,12 @@ if branch == 'science':
     )
     st.session_state['science_mode'] = science_mode
     st.markdown("---")
-    st.markdown("""<div class="ai-card card-library"><h3 style="margin: 0 0 10px 0; color: #9B59B6;">📚 Моя научная библиотека</h3>
+    st.markdown("""<div class="ai-card card-library"><h3 style="margin: 0 0 10px 0; color: #9B59B6;">Моя научная библиотека</h3>
     <p style="margin: 0; color: #A89F91;">Укажи путь к папке с учебниками.</p></div>""", unsafe_allow_html=True)
     library_path = st.text_input("Путь к папке:", placeholder="C:\\Users\\123\\Documents\\Научная_библиотека")
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("📂 Сканировать библиотеку", use_container_width=True):
+        if st.button("[ОТКРЫТЬ] Сканировать библиотеку", use_container_width=True):
             if library_path.strip():
                 with st.spinner("Сканирую..."):
                     books = scan_library_folder(library_path)
@@ -1355,7 +1355,7 @@ if branch == 'science':
     with col2:
         use_library = st.checkbox("📖 Использовать библиотеку", value=False)
     if 'library_books' in st.session_state:
-        st.markdown(f"### 📚 Найдено: {len(st.session_state['library_books'])} книг")
+        st.markdown(f"### [КНИГИ] Найдено: {len(st.session_state['library_books'])} книг")
         for i, book in enumerate(st.session_state['library_books'][:5], 1):
             st.markdown(f"**{i}.** {book['title']} - {book['author']} ({book['year']})")
     st.markdown("---")
@@ -1732,7 +1732,7 @@ with col2:
                     with st.spinner("Ищу книги..."):
                         relevant = search_relevant_books(task, st.session_state['library_books'], top_n=3)
                         if relevant:
-                            bt = "# 📚 БИБЛИОТЕКА\nИНСТРУКЦИЯ: Цитируй как [К1], [К2]\n\n"
+                            bt = "# [КНИГИ] БИБЛИОТЕКА\nИНСТРУКЦИЯ: Цитируй как [К1], [К2]\n\n"
                             for i, book in enumerate(relevant, 1):
                                 with st.status(f"Загружаю: {book['title'][:50]}..."):
                                     bt += f"## [К{i}] {book['title']}\n**Автор:** {book['author']} | **Год:** {book['year']}\n\n{load_book_content(book['path'])[:10000]}\n\n---\n\n"
@@ -1751,7 +1751,7 @@ with col2:
                         label = "ДОКУМЕНТ" if ftype == "document" else "ИЗОБРАЖЕНИЕ"
                         context_parts.append(f"# [DOC] {label} №{idx}: {fname}\n\n{ftext}\n\n")
                 if 'deep_analysis_articles' in st.session_state and st.session_state['deep_analysis_articles']:
-                    at = "# 📚 СТАТЬИ\nИНСТРУКЦИЯ: Цитируй как [1], [2]\n\n"
+                    at = "# [КНИГИ] СТАТЬИ\nИНСТРУКЦИЯ: Цитируй как [1], [2]\n\n"
                     for i, a in enumerate(st.session_state['deep_analysis_articles'], 1):
                         at += f"## [{i}] {a['title']}\n**Авторы:** {a['authors']} | **Год:** {a['year']}\n\n{a.get('full_text', '')[:10000]}\n\n---\n\n"
                     context_parts.append(at)
@@ -1828,7 +1828,7 @@ with col2:
                         full_doc.save(tmp.name); full_path = tmp.name
                     with open(full_path, "rb") as f:
                         st.download_button(
-                            label="📚 Скачать полную беседу",
+                            label="[КНИГИ] Скачать полную беседу",
                             data=f,
                             file_name=f"Беседа_{safe_task}_{date_str}.docx",
                             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
