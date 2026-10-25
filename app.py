@@ -1737,9 +1737,7 @@ with col2:
                 st.write(final)
                                            # === КНОПКИ СКАЧИВАНИЯ ===
                 st.markdown("---")
-                st.markdown("""<div class="ai-card" style="background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%); color: white; text-align: center;">
-                    <h3 style="margin: 0; color: white;">[OK] Задача выполнена!</h3>
-                    st.info("Выбери, что скачать:")
+                st.success("✅ Задача выполнена! Выбери, что скачать:")
                 
                 # Формируем имя файла из задачи
                 safe_task = task[:60].strip()
