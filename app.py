@@ -1508,7 +1508,7 @@ elif branch == 'grain':
     st.write(f"- **Цена с НДС 10%: {price_vat:,.2f} руб**")
 elif branch == 'business':
     # Анализ банковских выписок
-    st.markdown("""<div class="ai-card card-api"><h3 style="margin: 0 0 10px 0; color: #3498DB;">🏦 Анализ банковских выписок</h3>
+    st.markdown("""<div class="ai-card card-api"><h3 style="margin: 0 0 10px 0; color: #3498DB;">Анализ банковских выписок</h3>
     <p style="margin: 0; color: #A89F91;">Загрузи выписку (CSV, Excel) - ИИ найдёт причины убытков.</p></div>""", unsafe_allow_html=True)
     bank_statement = st.file_uploader("Загрузи банковскую выписку:", type=['csv', 'xlsx', 'xls'])
     if bank_statement is not None:
