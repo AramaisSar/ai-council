@@ -1112,7 +1112,7 @@ def display_opened_entry(entry):
     st.markdown("### 📝 Задача")
     st.info(entry.get('task', ''))
     if entry.get('file'):
-        st.markdown(f"**📎 Файл:** {entry['file']}")
+        st.markdown(f"**[ФАЙЛ] Файл:** {entry['file']}")
     st.markdown("---")
     st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1. Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
     st.write(entry.get('draft', ''))
@@ -1367,7 +1367,7 @@ if branch == 'science':
     with col2: use_openalex = st.checkbox("🌍 OpenAlex", value=True)
     with col3: use_semantic = st.checkbox("🤖 Semantic Scholar", value=True)
     deep_analysis = st.checkbox("[НАУКА] Глубокое исследование", value=True)
-    if st.button("🔍 Найти статьи", use_container_width=True):
+    if st.button("[ПОИСК] Найти статьи", use_container_width=True):
         if search_query.strip():
             all_articles = []
             if use_cyberleninka:
@@ -1570,7 +1570,7 @@ elif branch == 'business':
     st.markdown("---")
     
     # Финансовые данные
-    st.markdown("""<div class="ai-card card-api"><h3 style="margin: 0 0 10px 0; color: #3498DB;">📈 Актуальные финансовые данные</h3>
+    st.markdown("""<div class="ai-card card-api"><h3 style="margin: 0 0 10px 0; color: #3498DB;">Актуальные финансовые данные</h3>
     <p style="margin: 0; color: #A89F91;">ЦБ РФ и Yahoo Finance.</p></div>""", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1: use_cbr = st.checkbox("🇷🇺 ЦБ РФ", value=True)
@@ -1614,7 +1614,7 @@ elif branch == 'business':
     # Быстрый анализ выписки
     if 'bank_statement_df' in st.session_state:
         st.markdown("---")
-        st.markdown("""<div class="ai-card" style="border-left: 5px solid #3498DB;"><h3 style="margin: 0 0 10px 0; color: #3498DB;">🔍 Быстрый анализ выписки</h3></div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="ai-card" style="border-left: 5px solid #3498DB;"><h3 style="margin: 0 0 10px 0; color: #3498DB;">[ПОИСК] Быстрый анализ выписки</h3></div>""", unsafe_allow_html=True)
         df = st.session_state['bank_statement_df']
         amount_col = st.session_state.get('bank_amount_col')
         if amount_col:
@@ -1630,7 +1630,7 @@ elif branch == 'business':
 
 # === ОБЩИЕ ЭЛЕМЕНТЫ ===
 st.markdown("---")
-st.markdown("""<div class="ai-card card-excel"><h3 style="margin: 0 0 10px 0; color: #27AE60;">📎 Загрузи материалы</h3>
+st.markdown("""<div class="ai-card card-excel"><h3 style="margin: 0 0 10px 0; color: #27AE60;">[ФАЙЛ] Загрузи материалы</h3>
 <p style="margin: 0; color: #A89F91;">PDF, DOCX, TXT, Excel, фото</p></div>""", unsafe_allow_html=True)
 uploaded_files = st.file_uploader(
     "Загрузи материалы (можно несколько файлов сразу):", 
@@ -1644,7 +1644,7 @@ file_names = []
 excel_analysis = None
 
 if uploaded_files:
-    st.info(f"📎 Загружено файлов: {len(uploaded_files)}")
+    st.info(f"[ФАЙЛ] Загружено файлов: {len(uploaded_files)}")
     for idx, uploaded_file in enumerate(uploaded_files):
         try:
             file_name = uploaded_file.name
@@ -1771,7 +1771,7 @@ with col2:
                     draft = ask(MODEL_CHATGPT, chatgpt_prompt)
                 st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1️. Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
                 st.write(draft)
-                with st.spinner("🔍 Claude проверяет..."):
+                with st.spinner("[ПОИСК] Claude проверяет..."):
                     critique = ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
                 st.markdown("""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2️⃣ Критика от Claude</h3></div>""", unsafe_allow_html=True)
                 st.write(critique)
