@@ -854,7 +854,7 @@ def ask(model, prompt, max_tokens=32000):
     )
     return response.choices[0].message.content
     def ask_with_continuation(model, prompt, max_tokens=32000, max_attempts=5):
-    """Отправляет запрос и автоматически продолжает, если ответ обрезался"""
+        """Отправляет запрос и автоматически продолжает, если ответ обрезался"""
     full_text = ""
     last_response = ""
     
