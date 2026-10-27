@@ -842,11 +842,39 @@ def extract_text(file):
         doc = docx.Document(file); return "".join([p.text + "\n" for p in doc.paragraphs])
     else: raise Exception("Неподдерживаемый формат.")
 
-def ask(model, prompt):
+def ask(model, prompt, max_tokens=32000):
     key = load_key()
     if not key: raise Exception("Не найден key.txt или секрет API_KEY")
     client = OpenAI(api_key=key, base_url=BASE_URL)
-    return client.chat.completions.create(model=model, messages=[{"role": "user", "content": prompt}], temperature=0.3).choices[0].message.content
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3,
+        max_tokens=max_tokens
+    )
+    return response.choices[0].message.content
+    def ask_with_continuation(model, prompt, max_tokens=32000, max_attempts=5):
+    """Отправляет запрос и автоматически продолжает, если ответ обрезался"""
+    full_text = ""
+    last_response = ""
+    
+    for attempt in range(max_attempts):
+        if attempt == 0:
+            current_prompt = prompt
+        else:
+            # Берём последние 500 символов предыдущего ответа
+            tail = last_response[-500:] if len(last_response) > 500 else last_response
+            current_prompt = f"ПРОДОЛЖИ ТЕКСТ С ТОГО МЕСТА, ГДЕ ТЫ ОСТАНОВИЛСЯ. НЕ ПОВТОРЯЙ НАЧАЛО. Последний абзац обрывался так:\n\n...{tail}\n\nПродолжай с того же места:"
+        
+        response = ask(model, current_prompt, max_tokens=max_tokens)
+        full_text += response
+        last_response = response
+        
+        # Проверяем, не обрывается ли ответ на середине предложения
+        if response.rstrip().endswith(('.', '!', '?', '”', '"', ']', ')')):
+            break  # Ответ завершён нормально
+    
+    return full_text
 
 def analyze_image(file):
     key = load_key()
@@ -1724,17 +1752,18 @@ with col2:
                 chatgpt_prompt, claude_prompt, qwen_prompt = get_branch_prompts(branch, task, full_context_with_instructions)
                 
                 with st.spinner("📝 ChatGPT пишет..."):
-                    draft = ask(MODEL_CHATGPT, chatgpt_prompt)
-                st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1. Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
-                st.write(draft)
-                with st.spinner("[ПОИСК] Claude проверяет..."):
-                    critique = ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
-                st.markdown("""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2. Критика от Claude</h3></div>""", unsafe_allow_html=True)
-                st.write(critique)
-                with st.spinner(" Qwen готовит финал..."):
-                    final = ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
-                st.markdown("""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3. Финал от Qwen</h3></div>""", unsafe_allow_html=True)
-                st.write(final)
+                            with st.spinner(" ChatGPT пишет..."):
+            draft = ask(MODEL_CHATGPT, chatgpt_prompt)
+        st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1. Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
+        st.write(draft)
+        with st.spinner("🔍 Claude проверяет..."):
+            critique = ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
+        st.markdown("""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2. Критика от Claude</h3></div>""", unsafe_allow_html=True)
+        st.write(critique)
+        with st.spinner("🧠 Qwen готовит финал..."):
+            final = ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
+        st.markdown("""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3. Финал от Qwen</h3></div>""", unsafe_allow_html=True)
+        st.write(final)
                                            # === КНОПКИ СКАЧИВАНИЯ ===
                 st.markdown("---")
                 st.success("✅ Задача выполнена! Выбери, что скачать:")
