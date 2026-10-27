@@ -1752,8 +1752,7 @@ with col2:
                 chatgpt_prompt, claude_prompt, qwen_prompt = get_branch_prompts(branch, task, full_context_with_instructions)
                 
                 with st.spinner("📝 ChatGPT пишет..."):
-                            with st.spinner(" ChatGPT пишет..."):
-            draft = ask(MODEL_CHATGPT, chatgpt_prompt)
+                    draft = ask(MODEL_CHATGPT, chatgpt_prompt)
         st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1. Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
         st.write(draft)
         with st.spinner("🔍 Claude проверяет..."):
