@@ -1749,8 +1749,7 @@ with col2:
 4. Соблюдай стиль ветви.
 """
                 full_context_with_instructions = full_context + instructions if full_context else instructions
-                chatgpt_prompt, claude_prompt, qwen_prompt = get_branch_prompts(branch, task, full_context_with_instructions)
-                
+                chatgpt_prompt, claude_prompt, qwen_prompt = get_branch_prompts(branch, task, full_context_with_instructions)  
         try:
             with st.spinner("🤖 ChatGPT пишет..."):
                 draft = ask(MODEL_CHATGPT, chatgpt_prompt)
