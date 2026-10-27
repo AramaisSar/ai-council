@@ -1751,21 +1751,22 @@ with col2:
                 full_context_with_instructions = full_context + instructions if full_context else instructions
                 chatgpt_prompt, claude_prompt, qwen_prompt = get_branch_prompts(branch, task, full_context_with_instructions)
                 
-                with st.spinner("🤖 ChatGPT пишет..."):
-            draft = ask(MODEL_CHATGPT, chatgpt_prompt)
-        st.subheader("1. Черновик от ChatGPT", divider="orange")
-        st.write(draft)
-        with st.spinner("🔍 Claude проверяет..."):
-            critique = ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
-        st.subheader("2. Критика от Claude", divider="red")
-        st.write(critique)
-        with st.spinner("🧠 Qwen готовит финал..."):
-            final = ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
-        st.subheader("3. Финал от Qwen", divider="green")
-        st.write(final)
-    except Exception as e:
-        st.error(f"❌ Ошибка при генерации: {e}")
-        st.stop()
+        try:
+            with st.spinner("🤖 ChatGPT пишет..."):
+                draft = ask(MODEL_CHATGPT, chatgpt_prompt)
+            st.subheader("1. Черновик от ChatGPT", divider="orange")
+            st.write(draft)
+            with st.spinner("🔍 Claude проверяет..."):
+                critique = ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
+            st.subheader("2. Критика от Claude", divider="red")
+            st.write(critique)
+            with st.spinner("🧠 Qwen готовит финал..."):
+                final = ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
+            st.subheader("3. Финал от Qwen", divider="green")
+            st.write(final)
+        except Exception as e:
+            st.error(f"❌ Ошибка при генерации: {e}")
+            st.stop()
                                            # === КНОПКИ СКАЧИВАНИЯ ===
                 st.markdown("---")
                 st.success("✅ Задача выполнена! Выбери, что скачать:")
