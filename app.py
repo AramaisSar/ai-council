@@ -1751,17 +1751,20 @@ with col2:
                 full_context_with_instructions = full_context + instructions if full_context else instructions
                 chatgpt_prompt, claude_prompt, qwen_prompt = get_branch_prompts(branch, task, full_context_with_instructions)
                 
-                with st.spinner("📝 ChatGPT пишет..."):
-                    draft = ask(MODEL_CHATGPT, chatgpt_prompt)
-        st.markdown("""<div class="ai-card card-chatgpt"><h3 style="margin: 0 0 15px 0; color: #D4A373;">1. Черновик от ChatGPT</h3></div>""", unsafe_allow_html=True)
+        with st.spinner("🤖 ChatGPT пишет..."):
+            draft = ask(MODEL_CHATGPT, chatgpt_prompt)
+        st.subheader("1. Черновик от ChatGPT", divider="orange")
         st.write(draft)
         with st.spinner("🔍 Claude проверяет..."):
             critique = ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
-        st.markdown("""<div class="ai-card card-claude"><h3 style="margin: 0 0 15px 0; color: #E07A5F;">2. Критика от Claude</h3></div>""", unsafe_allow_html=True)
+        st.subheader("2. Критика от Claude", divider="red")
         st.write(critique)
         with st.spinner("🧠 Qwen готовит финал..."):
             final = ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
-        st.markdown("""<div class="ai-card card-qwen"><h3 style="margin: 0 0 15px 0; color: #8B5E3C;">3. Финал от Qwen</h3></div>""", unsafe_allow_html=True)
+        st.subheader("3. Финал от Qwen", divider="green")
+                except Exception as e:
+            st.error(f"❌ Ошибка при генерации: {e}")
+            st.stop()
         st.write(final)
                                            # === КНОПКИ СКАЧИВАНИЯ ===
                 st.markdown("---")
