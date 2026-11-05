@@ -1046,7 +1046,8 @@ def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
 - В самом конце - ОТВЕТ НА РЕЦЕНЗИЮ в виде таблицы
 
 Выдай доработанную статью целиком + ответ на рецензию."""
-    else:
+    claude_prompt = SCIENCE_CLAUDE_PROMPT
+    qwen_prompt = SCIENCE_QWEN_PROMPT
 
     elif branch == 'legal':
         chatgpt_prompt = f"""Ты - практикующий юрист с 15-летним стажем в судебных спорах. Твоя задача - изучить ВСЕ загруженные документы и подготовить юридически грамотный отзыв.
