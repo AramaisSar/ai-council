@@ -929,7 +929,7 @@ def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
 
 Выдай доработанную статью целиком + ответ на рецензию."""
         else:
-            cSCIENCE_CHATGPT_PROMPT = """Ты — профессор-юрист, доктор юридических наук, научный руководитель аспиранта.
+            SCIENCE_CHATGPT_PROMPT = """Ты — профессор-юрист, доктор юридических наук, научный руководитель аспиранта.
 Напиши {work_type} по теме:
 {task}
 
