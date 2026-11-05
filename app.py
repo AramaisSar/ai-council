@@ -902,7 +902,7 @@ def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
             .replace('{ctx}', full_context_with_instructions)
         claude_prompt = SCIENCE_CLAUDE_PROMPT
         qwen_prompt = SCIENCE_QWEN_PROMPT
-else:
+    elif branch == 'science':
         
         if branch == 'science' and mode == "Доработать существующую статью по рецензии":
             chatgpt_prompt = f"""Ты - научный ассистент, эксперт по доработке статей. Твоя задача - доработать существующую статью с учётом замечаний рецензента.
