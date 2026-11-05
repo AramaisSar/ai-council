@@ -1785,20 +1785,20 @@ if uploaded_files:
         for i, (ftype, fname, _) in enumerate(file_texts, 1):
             icon = "[DOC]" if ftype == "document" else "🖼️" if ftype == "image" else "[Excel]"
             st.write(f"{i}. {icon} {fname}")
-                scientific_params = {}
-    if branch == 'science':
-        col_s1, col_s2 = st.columns(2)
-        with col_s1:
-            scientific_params['work_type'] = st.selectbox("Тип работы:", 
-                ["Статья ВАК", "Статья Scopus/Web of Science", "Параграф диссертации", "Глава монографии", "Автореферат"])
-            scientific_params['methodology'] = st.selectbox("Методология:", 
-                ["Экономический анализ права", "Сравнительно-правовой", "Историко-правовой", "Формально-догматический", "Институциональный анализ"])
-        with col_s2:
-            scientific_params['volume'] = st.selectbox("Объём:", ["5 страниц", "10 страниц", "15 страниц", "20 страниц"])
-            scientific_params['hypothesis'] = st.text_input("Гипотеза исследования:", placeholder="Что именно доказываем")
-        
-        scientific_params['mandatory_sources'] = st.text_area("Обязательные источники для цитирования (каждый с новой строки):", 
-            placeholder="Карапетов А.Г. Экономический анализ права. 2016\nПознер Р.А. Экономический анализ права. Т. 1. 2004", height=100)
+scientific_params = {}
+if branch == 'science':
+    col_s1, col_s2 = st.columns(2)
+    with col_s1:
+        scientific_params['work_type'] = st.selectbox("Тип работы:", 
+            ["Статья ВАК", "Статья Scopus/Web of Science", "Параграф диссертации", "Глава монографии", "Автореферат"])
+        scientific_params['methodology'] = st.selectbox("Методология:", 
+            ["Экономический анализ права", "Сравнительно-правовой", "Историко-правовой", "Формально-догматический", "Институциональный анализ"])
+    with col_s2:
+        scientific_params['volume'] = st.selectbox("Объём:", ["5 страниц", "10 страниц", "15 страниц", "20 страниц"])
+        scientific_params['hypothesis'] = st.text_input("Гипотеза исследования:", placeholder="Что именно доказываем")
+    
+    scientific_params['mandatory_sources'] = st.text_area("Обязательные источники для цитирования (каждый с новой строки):", 
+        placeholder="Карапетов А.Г. Экономический анализ права. 2016\nПознер Р.А. Экономический анализ права. Т. 1. 2004", height=100)
 task = st.text_area("Опиши задачу:", height=150, 
     placeholder={
         'science': "Например: 'Напиши научную статью об ИИ в праве'",
