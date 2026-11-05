@@ -890,46 +890,7 @@ def analyze_image(file):
     return response.choices[0].message.content
 
 # --- ПРОМПТЫ ДЛЯ РАЗНЫХ ВЕТВЕЙ ---
-def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
-    if branch == 'science' and not mode.startswith("Доработать"):
-        chatgpt_prompt = SCIENCE_CHATGPT_PROMPT \
-            .replace('{task}', task) \
-            .replace('{work_type}', scientific_params.get('work_type', 'статью')) \
-            .replace('{methodology}', scientific_params.get('methodology', '')) \
-            .replace('{volume}', scientific_params.get('volume', '')) \
-            .replace('{hypothesis}', scientific_params.get('hypothesis', 'не указана')) \
-            .replace('{mandatory_sources}', scientific_params.get('mandatory_sources', 'не указаны')) \
-            .replace('{ctx}', full_context_with_instructions)
-        claude_prompt = SCIENCE_CLAUDE_PROMPT
-        qwen_prompt = SCIENCE_QWEN_PROMPT
-    elif branch == 'science':
-        
-        if branch == 'science' and mode == "Доработать существующую статью по рецензии":
-            chatgpt_prompt = f"""Ты - научный ассистент, эксперт по доработке статей. Твоя задача - доработать существующую статью с учётом замечаний рецензента.
-
-{full_context}
-
-## ЗАДАЧА: {task}
-
-## АЛГОРИТМ РАБОТЫ:
-1. Внимательно изучи ИСХОДНУЮ статью (она должна быть среди загруженных файлов)
-2. Изучи РЕЦЕНЗИЮ/ЗАМЕЧАНИЯ (тоже в загруженных файлах)
-3. Для каждого замечания из рецензии:
-   - Пойми суть замечания
-   - Найди место в статье, которое нужно доработать
-   - Внеси правки, сохранив стиль и логику исходной статьи
-4. Составь ОТВЕТ НА РЕЦЕНЗИЮ - таблицу "Замечание - Как исправлено"
-
-## ТРЕБОВАНИЯ:
-- Сохраняй стиль исходной статьи
-- Не переписывай то, что не просили дорабатывать
-- Цитируй новые источники как [1], [2] и т.д.
-- В конце - полный СПИСОК ЛИТЕРАТУРЫ (включая новые источники)
-- В самом конце - ОТВЕТ НА РЕЦЕНЗИЮ в виде таблицы
-
-Выдай доработанную статью целиком + ответ на рецензию."""
-        else:
-            SCIENCE_CHATGPT_PROMPT = """Ты — профессор-юрист, доктор юридических наук, научный руководитель аспиранта.
+SCIENCE_CHATGPT_PROMPT = """Ты — профессор-юрист, доктор юридических наук, научный руководитель аспиранта.
 Напиши {work_type} по теме:
 {task}
 
@@ -975,7 +936,7 @@ def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
 Пиши плотно, без "воды". Каждый абзац должен нести информацию или аргумент.
 """
 
-        SCIENCE_CLAUDE_PROMPT = """Ты — официальный оппонент на защите кандидатской/докторской диссертации.
+SCIENCE_CLAUDE_PROMPT = """Ты — официальный оппонент на защите кандидатской/докторской диссертации.
 Проведи жёсткую научную экспертизу текста ниже.
 
 КРИТЕРИИ ПРОВЕРКИ (по каждому выстави оценку 1-10 и аргументируй):
@@ -1047,6 +1008,45 @@ SCIENCE_QWEN_PROMPT = """Ты — профессор, который готов�
 ЗАМЕЧАНИЯ ОППОНЕНТА:
 {critique}
 """
+def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
+    if branch == 'science' and not mode.startswith("Доработать"):
+        chatgpt_prompt = SCIENCE_CHATGPT_PROMPT \
+            .replace('{task}', task) \
+            .replace('{work_type}', scientific_params.get('work_type', 'статью')) \
+            .replace('{methodology}', scientific_params.get('methodology', '')) \
+            .replace('{volume}', scientific_params.get('volume', '')) \
+            .replace('{hypothesis}', scientific_params.get('hypothesis', 'не указана')) \
+            .replace('{mandatory_sources}', scientific_params.get('mandatory_sources', 'не указаны')) \
+            .replace('{ctx}', full_context_with_instructions)
+        claude_prompt = SCIENCE_CLAUDE_PROMPT
+        qwen_prompt = SCIENCE_QWEN_PROMPT
+    elif branch == 'science':
+        
+        if branch == 'science' and mode == "Доработать существующую статью по рецензии":
+            chatgpt_prompt = f"""Ты - научный ассистент, эксперт по доработке статей. Твоя задача - доработать существующую статью с учётом замечаний рецензента.
+
+{full_context}
+
+## ЗАДАЧА: {task}
+
+## АЛГОРИТМ РАБОТЫ:
+1. Внимательно изучи ИСХОДНУЮ статью (она должна быть среди загруженных файлов)
+2. Изучи РЕЦЕНЗИЮ/ЗАМЕЧАНИЯ (тоже в загруженных файлах)
+3. Для каждого замечания из рецензии:
+   - Пойми суть замечания
+   - Найди место в статье, которое нужно доработать
+   - Внеси правки, сохранив стиль и логику исходной статьи
+4. Составь ОТВЕТ НА РЕЦЕНЗИЮ - таблицу "Замечание - Как исправлено"
+
+## ТРЕБОВАНИЯ:
+- Сохраняй стиль исходной статьи
+- Не переписывай то, что не просили дорабатывать
+- Цитируй новые источники как [1], [2] и т.д.
+- В конце - полный СПИСОК ЛИТЕРАТУРЫ (включая новые источники)
+- В самом конце - ОТВЕТ НА РЕЦЕНЗИЮ в виде таблицы
+
+Выдай доработанную статью целиком + ответ на рецензию."""
+        else:
 
     elif branch == 'legal':
         chatgpt_prompt = f"""Ты - практикующий юрист с 15-летним стажем в судебных спорах. Твоя задача - изучить ВСЕ загруженные документы и подготовить юридически грамотный отзыв.
