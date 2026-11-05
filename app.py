@@ -891,21 +891,20 @@ def analyze_image(file):
 
 # --- ПРОМПТЫ ДЛЯ РАЗНЫХ ВЕТВЕЙ ---
 def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
-                    if branch == 'science':
-                    chatgpt_prompt = SCIENCE_CHATGPT_PROMPT \
-                        .replace('{task}', task) \
-                        .replace('{work_type}', scientific_params.get('work_type', 'статью')) \
-                        .replace('{methodology}', scientific_params.get('methodology', '')) \
-                        .replace('{volume}', scientific_params.get('volume', '')) \
-                        .replace('{hypothesis}', scientific_params.get('hypothesis', 'не указана')) \
-                        .replace('{mandatory_sources}', scientific_params.get('mandatory_sources', 'не указаны')) \
-                        .replace('{ctx}', full_context_with_instructions)
-                    claude_prompt = SCIENCE_CLAUDE_PROMPT
-                    qwen_prompt = SCIENCE_QWEN_PROMPT
-                else:
-                    chatgpt_prompt, claude_prompt, qwen_prompt = get_branch_prompts(branch, task, full_context_with_instructions)
+    if branch == 'science' and not mode.startswith("Доработать")::
+        chatgpt_prompt = SCIENCE_CHATGPT_PROMPT \
+            .replace('{task}', task) \
+            .replace('{work_type}', scientific_params.get('work_type', 'статью')) \
+            .replace('{methodology}', scientific_params.get('methodology', '')) \
+            .replace('{volume}', scientific_params.get('volume', '')) \
+            .replace('{hypothesis}', scientific_params.get('hypothesis', 'не указана')) \
+            .replace('{mandatory_sources}', scientific_params.get('mandatory_sources', 'не указаны')) \
+            .replace('{ctx}', full_context_with_instructions)
+        claude_prompt = SCIENCE_CLAUDE_PROMPT
+        qwen_prompt = SCIENCE_QWEN_PROMPT
+else:
         
-        if mode == "Доработать существующую статью по рецензии":
+        if branch == 'science' and mode == "Доработать существующую статью по рецензии":
             chatgpt_prompt = f"""Ты - научный ассистент, эксперт по доработке статей. Твоя задача - доработать существующую статью с учётом замечаний рецензента.
 
 {full_context}
