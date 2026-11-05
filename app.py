@@ -891,7 +891,7 @@ def analyze_image(file):
 
 # --- ПРОМПТЫ ДЛЯ РАЗНЫХ ВЕТВЕЙ ---
 def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
-    if branch == 'science' and not mode.startswith("Доработать")::
+    if branch == 'science' and not mode.startswith("Доработать"):
         chatgpt_prompt = SCIENCE_CHATGPT_PROMPT \
             .replace('{task}', task) \
             .replace('{work_type}', scientific_params.get('work_type', 'статью')) \
