@@ -1866,6 +1866,11 @@ if branch == 'science':
     
     scientific_params['mandatory_sources'] = st.text_area("Обязательные источники для цитирования (каждый с новой строки):", 
         placeholder="Карапетов А.Г. Экономический анализ права. 2016\nПознер Р.А. Экономический анализ права. Т. 1. 2004", height=100)
+project_type = ""
+tech = ""
+if branch == 'code':
+    project_type = st.selectbox("Тип проекта:", ["Телеграм-бот", "Сайт-лендинг", "Многостраничный сайт", "Парсер данных", "Веб-приложение Streamlit", "Другое"])
+    tech = st.text_input("Технологии и пожелания (необязательно):", placeholder="Например: библиотека telebot, без базы данных")
 task = st.text_area("Опиши задачу:", height=150, 
     placeholder={
         'science': "Например: 'Напиши научную статью об ИИ в праве'",
@@ -1920,18 +1925,22 @@ with col2:
 """
                 full_context_with_instructions = full_context + instructions if full_context else instructions
                 chatgpt_prompt, claude_prompt, qwen_prompt = get_branch_prompts(branch, task, full_context_with_instructions)  
-        
+                if branch == 'code':
+                    code_task = task + "\nТип проекта: " + project_type + "\nПожелания по технологиям: " + (tech if tech else "на усмотрение разработчика")
+                    chatgpt_prompt = CODE_CHATGPT_PROMPT.replace('{task}', code_task).replace('{ctx}', full_context_with_instructions)
+                    claude_prompt = CODE_CLAUDE_PROMPT
+                    qwen_prompt = CODE_QWEN_PROMPT
                 try:
                     with st.spinner("🤖 ChatGPT пишет..."):
-                        draft = ask(MODEL_CHATGPT, chatgpt_prompt)
+                        draft = ask_code(MODEL_CHATGPT, chatgpt_prompt) if branch == 'code' else ask(MODEL_CHATGPT, chatgpt_prompt)
                     st.subheader("1. Черновик от ChatGPT", divider="orange")
                     st.write(draft)
                     with st.spinner("🔍 Claude проверяет..."):
-                        critique = ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
+                        critique = ask_code(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft)) if branch == 'code' else ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
                     st.subheader("2. Критика от Claude", divider="red")
                     st.write(critique)
                     with st.spinner("🧠 Qwen готовит финал..."):
-                        final = ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
+                        final = ask_code(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique)) if branch == 'code' else ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
                     st.subheader("3. Финал от Qwen", divider="green")
                     st.write(final)
                 except Exception as e:
@@ -1941,7 +1950,8 @@ with col2:
                                            # === КНОПКИ СКАЧИВАНИЯ ===
                 st.markdown("---")
                 st.success("✅ Задача выполнена! Выбери, что скачать:")
-                
+                if branch == 'code':
+                    st.download_button("[CODE] Скачать код проекта одним файлом", data=final, file_name=safe_task + "_project.md", mime="text/markdown", use_container_width=True)
                 # Формируем имя файла из задачи
                 safe_task = task[:60].strip()
                 # Удаляем запрещённые символы для имён файлов
