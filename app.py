@@ -1944,18 +1944,18 @@ with col2:
                 try:
                     if branch == 'code':
                         draft = ask_code(MODEL_CHATGPT, chatgpt_prompt) if branch == 'code' else ask(MODEL_CHATGPT, chatgpt_prompt)
-                    with st.spinner("🤖 ChatGPT пишет..."):
-                        critique = ask_code(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft)) if branch == 'code' else ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
-                    st.subheader("1. Черновик от ChatGPT", divider="orange")
-                    st.write(draft)
-                    with st.spinner("🔍 Claude проверяет..."):
-                        final = ask_code(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique)) if branch == 'code' else ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
-                    st.subheader("2. Критика от Claude", divider="red")
-                    st.write(critique)
-                    with st.spinner("🧠 Qwen готовит финал..."):
-                        final = ask_code(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique)) if branch == 'code' else ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
-                    st.subheader("3. Финал от Qwen", divider="green")
-                    st.write(final)
+                with st.spinner("🤖 ChatGPT пишет..."):
+                    draft = ask_code(MODEL_CHATGPT, chatgpt_prompt) if branch == 'code' else ask(MODEL_CHATGPT, chatgpt_prompt)
+                st.subheader("1. Черновик от ChatGPT", divider="orange")
+                st.write(draft)
+                with st.spinner("🔍 Claude проверяет..."):
+                    critique = ask_code(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft)) if branch == 'code' else ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
+                st.subheader("2. Критика от Claude", divider="red")
+                st.write(critique)
+                with st.spinner("🧠 Qwen готовит финал..."):
+                    final = ask_code(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique)) if branch == 'code' else ask(MODEL_QWEN, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
+            st.subheader("3. Финал от Qwen", divider="green")
+            st.write(final)
                 except Exception as e:
                     st.error(f"❌ Ошибка при генерации: {e}")
                     st.stop()
