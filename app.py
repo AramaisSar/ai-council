@@ -24,9 +24,9 @@ HISTORY_FILE = "history.json"
 PROJECTS_FILE = "projects.json"
 LIBRARY_INDEX_FILE = "library_index.json"
 BASE_URL = "https://api.vsegpt.ru/v1"
-MODEL_CHATGPT = "openai/gpt-4o-mini"
-MODEL_CLAUDE  = "anthropic/claude-3-5-haiku"
-MODEL_QWEN    = "qwen/qwen-plus"
+MODEL_CHATGPT = "openai/gpt-4.1"
+MODEL_CLAUDE  = "anthropic/claude-sonnet-4"
+MODEL_QWEN    = "qwen/qwen-max"
 MAX_FILE_SIZE = 50000 
 MAX_ARTICLES = 5
 MAX_BOOK_PAGES = 30
@@ -1056,7 +1056,7 @@ CODE_CLAUDE_PROMPT = """Ты — строгий код-ревьюер и QA-ин
 {draft}
 """
 
-CODE_QWEN_PROMPT = """Ты — ведущий разработчик, сдающий финальную версию проекта заказчику-непрограммисту.
+CODE_QWEN_PROMPT = """Ты — ведущий разработчик, сдающий финальную версию проекта заказчику-непрограммисту. CODE_MODELS = ("openai/gpt-4.1", "anthropic/claude-sonnet-4", "qwen/qwen3-coder-plus")
 Возьми черновик кода и замечания ревьюера. Исправь ВСЕ замечания и выдай финальный проект.
 ФОРМАТ ОТВЕТА (строго по разделам):
 1. СТРУКТУРА ПРОЕКТА — дерево файлов.
@@ -1946,6 +1946,9 @@ with col2:
                 except Exception as e:
                     st.error(f"❌ Ошибка при генерации: {e}")
                     st.stop()
+                    m1, m2, m3 = CODE_MODELS
+                if branch != 'code':
+                        m1, m2, m3 = draft = ask_code(m1, chatgpt_prompt) if branch == 'code' else ask(m1, chatgpt_prompt), critique = ask_code(m2, claude_prompt.replace('{draft}', draft)) if branch == 'code' else ask(m2, claude_prompt.replace('{draft}', draft)), final = ask_code(m3, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique)) if branch == 'code' else ask(m3, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
 
                                            # === КНОПКИ СКАЧИВАНИЯ ===
                 st.markdown("---")
