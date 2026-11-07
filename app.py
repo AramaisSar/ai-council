@@ -842,16 +842,26 @@ def extract_text(file):
         doc = docx.Document(file); return "".join([p.text + "\n" for p in doc.paragraphs])
     else: raise Exception("Неподдерживаемый формат.")
 
+FALLBACK_MODELS = ["openai/gpt-4o-mini", "anthropic/claude-3-5-haiku", "qwen/qwen-plus"]
+
 def ask(model, prompt, max_tokens=32000):
     key = load_key()
     if not key: raise Exception("Не найден key.txt или секрет API_KEY")
     client = OpenAI(api_key=key, base_url=BASE_URL)
-    response = client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=max_tokens
-    )
+    models_to_try = [model] + [m for m in FALLBACK_MODELS if m != model]
+    last_error = None
+    for m in models_to_try:
+        try:
+            response = client.chat.completions.create(
+                model=m,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+                max_tokens=max_tokens
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            last_error = e
+    raise last_error
     return response.choices[0].message.content
     def ask_with_continuation(model, prompt, max_tokens=32000, max_attempts=5):
         """Отправляет запрос и автоматически продолжает, если ответ обрезался"""
@@ -1070,7 +1080,7 @@ CODE_QWEN_PROMPT = """Ты — ведущий разработчик, сдающ
 {critique}
 """
 def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
-    if branch == 'science' and not mode.startswith("Доработать"):
+    if branch == 'science' and not str(globals().get('mode', '')).startswith("Доработать"):
         chatgpt_prompt = SCIENCE_CHATGPT_PROMPT \
             .replace('{task}', task) \
             .replace('{work_type}', scientific_params.get('work_type', 'статью')) \
@@ -1083,7 +1093,7 @@ def get_branch_prompts(branch, task, full_context, draft=None, critique=None):
         qwen_prompt = SCIENCE_QWEN_PROMPT
     elif branch == 'science':
         
-        if branch == 'science' and mode == "Доработать существующую статью по рецензии":
+        if branch == 'science' and str(globals().get('mode', '')) == "Доработать существующую статью по рецензии":
             chatgpt_prompt = f"""Ты - научный ассистент, эксперт по доработке статей. Твоя задача - доработать существующую статью с учётом замечаний рецензента.
 
 {full_context}
@@ -1854,6 +1864,7 @@ if uploaded_files:
             st.write(f"{i}. {icon} {fname}")
 scientific_params = {}
 if branch == 'science':
+    mode = st.selectbox("Режим работы:", ["Написать новую работу", "Доработать существующую статью по рецензии"])
     col_s1, col_s2 = st.columns(2)
     with col_s1:
         scientific_params['work_type'] = st.selectbox("Тип работы:", 
