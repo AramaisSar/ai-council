@@ -1935,6 +1935,10 @@ with col2:
                         draft = ask_code(m1, chatgpt_prompt) if branch == 'code' else ask(m1, chatgpt_prompt)
                     else:
                         m1, m2, m3 = MODEL_CHATGPT, MODEL_CLAUDE, MODEL_QWEN
+                    if branch == 'code':
+                        m1, m2, m3 = CODE_MODELS
+                    else:
+                        m1, m2, m3 = MODEL_CHATGPT, MODEL_CLAUDE, MODEL_QWEN
                     with st.spinner("🤖 ChatGPT пишет..."):
                         critique = ask_code(m2, claude_prompt.replace('{draft}', draft)) if branch == 'code' else ask(m2, claude_prompt.replace('{draft}', draft))
                     st.subheader("1. Черновик от ChatGPT", divider="orange")
