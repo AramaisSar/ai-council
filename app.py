@@ -1269,7 +1269,7 @@ def display_opened_entry(entry):
         return
     branch = entry.get('branch', 'science')
     branch_names = {'science': '[НАУКА] Наука', 'legal': '[ПРАВО] Юридическая практика', 'business': '[БИЗНЕС] Бизнес-консалтинг', 'grain': '[ЗЕРНО] Зерновой бизнес'}
-    branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60', 'grain': '#FFD700'}
+    branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60', 'grain': '#FFD700',  'code': '#8E44AD'}
     
     st.markdown(f"""<div class="ai-card" style="border-left: 8px solid {branch_colors.get(branch, '#8B5E3C')};">
         <h3 style="margin: 0; color: {branch_colors.get(branch, '#8B5E3C')};"> {entry.get('task', '')[:80]}</h3>
@@ -1427,7 +1427,7 @@ if not st.session_state['branch']:
     </div>
     """, unsafe_allow_html=True)
     
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     
     with col1:
         st.markdown("""
@@ -1476,12 +1476,18 @@ if not st.session_state['branch']:
             st.session_state['selected_project'] = None
             st.session_state['show_new_chat'] = False
             st.rerun()
-    
+    with col5:
+        st.markdown("""<div class="branch-card" style="border-left: 5px solid #8E44AD;"><h3 style="margin: 0; font-size: 2.2rem;">Программирование</h3><p style="margin: 10px 0 0 0; color: #A89F91;">Сайты, боты, приложения</p></div>""", unsafe_allow_html=True)
+        if st.button("ПРОГРАММИРОВАНИЕ", key="btn_code", use_container_width=True):
+            st.session_state['branch'] = 'code'
+            st.session_state['selected_project'] = None
+            st.session_state['show_new_chat'] = False
+            st.rerun()
     st.stop()
 # === РАБОТА ВНУТРИ ВЕТВИ ===
 branch = st.session_state['branch']
-branch_names = {'science': '[НАУКА] Наука', 'legal': '[ПРАВО] Юридическая практика', 'business': '[БИЗНЕС] Бизнес-консалтинг', 'grain': '[ЗЕРНО] Зерновой бизнес'}
-branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60', 'grain': '#FFD700'}
+branch_names = {'science': '[НАУКА] Наука', 'legal': '[ПРАВО] Юридическая практика', 'business': '[БИЗНЕС] Бизнес-консалтинг', 'grain': '[ЗЕРНО] Зерновой бизнес', 'code': 'Программирование'}
+branch_colors = {'science': '#9B59B6', 'legal': '#2C3E50', 'business': '#27AE60', 'grain': '#FFD700',  'code': '#8E44AD'}
 project_label = selected_project['name'] if selected_project else '💬 Быстрый диалог'
 
 st.markdown(f"""<div class="ai-card" style="border-left: 8px solid {branch_colors[branch]};">
