@@ -1931,12 +1931,16 @@ with col2:
                     claude_prompt = CODE_CLAUDE_PROMPT
                     qwen_prompt = CODE_QWEN_PROMPT
                 try:
+                    if branch == 'code':
+                        draft = ask_code(m1, chatgpt_prompt) if branch == 'code' else ask(m1, chatgpt_prompt)
+                    else:
+                        m1, m2, m3 = MODEL_CHATGPT, MODEL_CLAUDE, MODEL_QWEN
                     with st.spinner("🤖 ChatGPT пишет..."):
-                        draft = ask_code(MODEL_CHATGPT, chatgpt_prompt) if branch == 'code' else ask(MODEL_CHATGPT, chatgpt_prompt)
+                        critique = ask_code(m2, claude_prompt.replace('{draft}', draft)) if branch == 'code' else ask(m2, claude_prompt.replace('{draft}', draft))
                     st.subheader("1. Черновик от ChatGPT", divider="orange")
                     st.write(draft)
                     with st.spinner("🔍 Claude проверяет..."):
-                        critique = ask_code(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft)) if branch == 'code' else ask(MODEL_CLAUDE, claude_prompt.replace('{draft}', draft))
+                        final = ask_code(m3, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique)) if branch == 'code' else ask(m3, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
                     st.subheader("2. Критика от Claude", divider="red")
                     st.write(critique)
                     with st.spinner("🧠 Qwen готовит финал..."):
@@ -1946,9 +1950,6 @@ with col2:
                 except Exception as e:
                     st.error(f"❌ Ошибка при генерации: {e}")
                     st.stop()
-                    m1, m2, m3 = CODE_MODELS
-                if branch != 'code':
-                        m1, m2, m3 = draft = ask_code(m1, chatgpt_prompt) if branch == 'code' else ask(m1, chatgpt_prompt), critique = ask_code(m2, claude_prompt.replace('{draft}', draft)) if branch == 'code' else ask(m2, claude_prompt.replace('{draft}', draft)), final = ask_code(m3, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique)) if branch == 'code' else ask(m3, qwen_prompt.replace('{draft}', draft).replace('{critique}', critique))
 
                                            # === КНОПКИ СКАЧИВАНИЯ ===
                 st.markdown("---")
